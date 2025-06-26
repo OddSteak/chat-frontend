@@ -1,26 +1,92 @@
 @import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+	/* Rosé Pine Dawn */
+	--rp-base: hsl(32, 57%, 95%);
+	--rp-surface: hsl(35, 100%, 98%);
+	--rp-overlay: hsl(33, 43%, 91%);
+	--rp-muted: hsl(257, 9%, 61%);
+	--rp-subtle: hsl(248, 12%, 52%);
+	--rp-text: hsl(248, 19%, 40%);
+	--rp-love: hsl(343, 35%, 55%);
+	--rp-gold: hsl(35, 81%, 56%);
+	--rp-rose: hsl(3, 53%, 67%);
+	--rp-pine: hsl(197, 53%, 34%);
+	--rp-foam: hsl(189, 30%, 48%);
+	--rp-iris: hsl(268, 21%, 57%);
+	--rp-highlight-low: hsl(25, 35%, 93%);
+	--rp-highlight-med: hsl(10, 9%, 86%);
+	--rp-highlight-high: hsl(315, 4%, 80%);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+	:root {
+		/* Rosé Pine */
+		--rp-base: hsl(249, 22%, 12%);
+		--rp-surface: hsl(247, 23%, 15%);
+		--rp-overlay: hsl(248, 25%, 18%);
+		--rp-muted: hsl(249, 12%, 47%);
+		--rp-subtle: hsl(248, 15%, 61%);
+		--rp-text: hsl(245, 50%, 91%);
+		--rp-love: hsl(343, 76%, 68%);
+		--rp-gold: hsl(35, 88%, 72%);
+		--rp-rose: hsl(2, 55%, 83%);
+		--rp-pine: hsl(197, 49%, 38%);
+		--rp-foam: hsl(189, 43%, 73%);
+		--rp-iris: hsl(267, 57%, 78%);
+		--rp-highlight-low: hsl(244, 18%, 15%);
+		--rp-highlight-med: hsl(249, 15%, 28%);
+		--rp-highlight-high: hsl(248, 13%, 36%);
+
+		/* Rosé Pine Moon */
+		/* --rp-base: hsl(246, 24%, 17%); */
+		/* --rp-surface: hsl(248, 24%, 20%); */
+		/* --rp-overlay: hsl(248, 21%, 26%); */
+		/* --rp-muted: hsl(249, 12%, 47%); */
+		/* --rp-subtle: hsl(248, 15%, 61%); */
+		/* --rp-text: hsl(245, 50%, 91%); */
+		/* --rp-love: hsl(343, 76%, 68%); */
+		/* --rp-gold: hsl(35, 88%, 72%); */
+		/* --rp-rose: hsl(2, 66%, 75%); */
+		/* --rp-pine: hsl(197, 48%, 47%); */
+		/* --rp-foam: hsl(189, 43%, 73%); */
+		/* --rp-iris: hsl(267, 57%, 78%); */
+		/* --rp-highlight-low: hsl(245, 22%, 20%); */
+		/* --rp-highlight-med: hsl(247, 16%, 30%); */
+		/* --rp-highlight-high: hsl(249, 15%, 38%); */
+	}
+}
+
+:root {
+  --background: var(--rp-base);
+  --foreground: var(--rp-text);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+@theme {
+  --color-base: var(--rp-base);
+  --color-surface: var(--rp-surface);
+  --color-overlay: var(--rp-overlay);
+  --color-muted: var(--rp-muted);
+  --color-subtle: var(--rp-subtle);
+  --color-text: var(--rp-text);
+  --color-love: var(--rp-love);
+  --color-gold: var(--rp-gold);
+  --color-rose: var(--rp-rose);
+  --color-pine: var(--rp-pine);
+  --color-foam: var(--rp-foam);
+  --color-iris: var(--rp-iris);
+  --color-highlight-low: var(--rp-highlight-low);
+  --color-highlight-med: var(--rp-highlight-med);
+  --color-highlight-high: var(--rp-highlight-high);
+  --color-background: var(--rp-base);
+  --color-foreground: var(--rp-text);
 }
