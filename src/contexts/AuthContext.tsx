@@ -14,6 +14,7 @@ interface AuthContextType {
   loading: boolean
   error: boolean
   login: (username: string, password: string) => Promise<boolean>
+  register: (username: string, email: string, password: string) => Promise<boolean>
   logout: () => Promise<void>
   refetch: () => Promise<void>
 }
@@ -51,6 +52,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const register = async (username: string, email: string, password: string): Promise<boolean> => {
+    try {
+      await apiClient.post("/api/auth/register", { username: username, email: email, password: password });
+      await fetchUser(); // Fetch user data after successful login
+      return true;
+    } catch (error) {
+      console.error("Signup error:", error);
+      return false;
+    }
+  }
+
   const logout = async () => {
     try {
       await apiClient.post("/api/auth/logout", {})
@@ -84,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         error,
         login,
+        register,
         logout,
         refetch: fetchUser
       }}
