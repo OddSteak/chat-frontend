@@ -1,3 +1,5 @@
+import { ProfileData } from "./ChatData";
+
 export default function ChatRoom() {
   return (
     <div className="flex h-screen bg-base">
@@ -9,10 +11,7 @@ export default function ChatRoom() {
             <div className="w-10 h-10 bg-overlay rounded-full flex items-center justify-center">
               <span className="text-text font-medium">J</span>
             </div>
-            <div>
-              <h3 className="font-medium text-text">John Doe</h3>
-              <p className="text-sm text-muted">Online</p>
-            </div>
+            <ProfileData />
           </div>
         </div>
 

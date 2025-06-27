@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { apiClient } from '@/lib/api'
+import { useRetryConnection } from '@/hooks/useRetryConnection'
 
 interface UserData {
   id: number
@@ -25,21 +26,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const { retryState, startRetryLoop, stopRetryLoop } = useRetryConnection();
 
   const fetchUser = async () => {
     try {
-      setLoading(true)
-      setError(false)
       const data = await apiClient.get("/api/auth/me")
       setUser(data.user)
     } catch (error) {
       console.error("Error fetching user:", error)
       setError(true)
-      setUser(null)
     } finally {
       setLoading(false)
     }
   }
+
+  // Auto-start retry loop when there's an error
+  useEffect(() => {
+    if (error && !retryState.isRetrying) {
+      setLoading(true);
+      startRetryLoop(
+        async () => {
+          const data = await apiClient.get("/api/auth/me");
+          return data;
+        },
+        (data: any) => {
+          console.log('Connection restored successfully!');
+          setLoading(false);
+          setUser(data.user);
+          setError(false);
+        },
+        () => {
+          console.log('Max retries reached. Please check your connection.')
+          setLoading(false);
+          setError(true);
+        }
+      );
+    }
+
+    return () => {
+      stopRetryLoop();
+    };
+  }, [error]);
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {

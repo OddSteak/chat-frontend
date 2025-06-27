@@ -12,7 +12,7 @@ export default function UserDetails() {
   if (error) {
     return (
       <div className="text-center">
-        <p className="text-red-500 mb-2">Failed to load profile data.</p>
+        <p className="text-love mb-2">Failed to load profile data.</p>
         <button
           onClick={refetch}
           className="px-4 py-2 bg-pine text-text rounded hover:bg-blue-700"
@@ -24,7 +24,7 @@ export default function UserDetails() {
   }
 
   if (!user) {
-    return <p className="text-red-500 text-center">No user data available.</p>
+    return <p className="text-love text-center">No user data available.</p>
   }
 
   return (
