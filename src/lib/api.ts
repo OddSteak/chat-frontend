@@ -25,8 +25,6 @@ class ApiClient {
       if (typeof window !== 'undefined') {
         // Trigger logout in your auth context
         window.dispatchEvent(new CustomEvent('unauthorized'))
-        // Redirect to login
-        window.location.href = '/login'
       }
       throw new Error('Unauthorized')
     }
