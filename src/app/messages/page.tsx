@@ -1,10 +1,42 @@
+'use client'
+
+import { useEffect, useState } from "react";
 import { ProfileData } from "./ChatData";
+import { useRetryConnection } from "@/hooks/useRetryConnection";
+import { apiClient } from "@/lib/api";
 
 export default function ChatRoom() {
+  const { retryState, startRetryLoop, stopRetryLoop } = useRetryConnection();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [messages, setMessages] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isFriendsMode, setIsFriendsMode] = useState(true);
+
+  useEffect(() => {
+    startRetryLoop(
+      async () => {
+        const data = await apiClient.get("/api/get-pms");
+        return data;
+      },
+      (data: any) => {
+        console.log("successfully fetched messages!")
+        setLoading(false);
+        setMessages(data.messages);
+        setError(false);
+      },
+      () => {
+        console.log("failed to fetch messages");
+        setLoading(false);
+        setError(true);
+      }
+    );
+  }, [])
+
   return (
     <div className="flex h-screen bg-base">
       {/* Left Panel */}
-      <div className="w-80 bg-surface border-r border-highlight-high flex flex-col">
+      <div className="w-60 bg-surface border-r border-highlight-high flex flex-col">
         {/* Profile Section */}
         <div className="p-6 border-b border-highlight-high">
           <div className="flex items-center space-x-3">
@@ -15,6 +47,34 @@ export default function ChatRoom() {
           </div>
         </div>
 
+        {/* new chat button */}
+        {/*
+        <div className="p-2">
+          <div className="flex flex-col justify-center justify-items-center p-5 h-11 w-full border-highlight-low shadow-sm text-text bg-overlay rounded-2xl">
+            <button className="items-center" onClick={() => setNewChatOpen(true)}>
+              New Chat
+            </button>
+          </div>
+        </div>
+        */}
+
+        {/* switch friends/room mode */}
+        <div className="p-2 h-14 mt-2 w-full self-center">
+          <div className="h-full rounded-lg border-highlight-low shadow-sm text-text bg-overlay">
+            <div className="p-1 h-full flex flex-row justify-center justify-items-center">
+              <button className="flex-1 bg-highlight-high rounded-lg text-center justify-items-center">
+                <span className="h-full text-center" onClick={() => setIsFriendsMode(false)}>
+                  rooms
+                </span>
+              </button>
+              <button className="flex-1 rounded-lg text-center justify-items-center">
+                <span className="h-full text-center" onClick={() => setIsFriendsMode(true)}>
+                  friends
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
         {/* Channels/Rooms */}
         <div className="flex-1 overflow-y-auto p-4">
           <h4 className="text-xs font-semibold text-subtle uppercase tracking-wider mb-3">
