@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { ProfileData } from "./ChatData";
 import { useRetryConnection } from "@/hooks/useRetryConnection";
 import { apiClient } from "@/lib/api";
+import FriendList from "./FriendList";
+import AddFriend from "./AddFriend";
 
 export default function ChatRoom() {
   const { retryState, startRetryLoop, stopRetryLoop } = useRetryConnection();
@@ -12,17 +14,38 @@ export default function ChatRoom() {
   const [messages, setMessages] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isFriendsMode, setIsFriendsMode] = useState(true);
+  const [friends, setFriends] = useState([]);
 
   useEffect(() => {
     startRetryLoop(
       async () => {
         const data = await apiClient.get("/api/get-pms");
-        return data;
+        return await data.json();
       },
       (data: any) => {
         console.log("successfully fetched messages!")
         setLoading(false);
         setMessages(data.messages);
+        setError(false);
+      },
+      () => {
+        console.log("failed to fetch messages");
+        setLoading(false);
+        setError(true);
+      }
+    );
+  }, [])
+
+  useEffect(() => {
+    startRetryLoop(
+      async () => {
+        const data = await apiClient.get("/api/friends/get-friends");
+        return await data.json();
+      },
+      (data: any) => {
+        console.log("successfully fetched messages!")
+        setLoading(false);
+        setFriends(data.friends);
         setError(false);
       },
       () => {
@@ -62,12 +85,12 @@ export default function ChatRoom() {
         <div className="p-2 h-14 mt-2 w-full self-center">
           <div className="h-full rounded-lg border-highlight-low shadow-sm text-text bg-overlay">
             <div className="p-1 h-full flex flex-row justify-center justify-items-center">
-              <button className="flex-1 bg-highlight-high rounded-lg text-center justify-items-center">
+              <button className={`flex-1 ${ !isFriendsMode ? `bg-highlight-med` : `` } rounded-sm text-center justify-items-center`}>
                 <span className="h-full text-center" onClick={() => setIsFriendsMode(false)}>
                   rooms
                 </span>
               </button>
-              <button className="flex-1 rounded-lg text-center justify-items-center">
+              <button className={`flex-1 ${ isFriendsMode ? `bg-highlight-med` : `` } rounded-sm text-center justify-items-center`}>
                 <span className="h-full text-center" onClick={() => setIsFriendsMode(true)}>
                   friends
                 </span>
@@ -75,11 +98,28 @@ export default function ChatRoom() {
             </div>
           </div>
         </div>
+
         {/* Channels/Rooms */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <h4 className="text-xs font-semibold text-subtle uppercase tracking-wider mb-3">
-            Channels
-          </h4>
+        <div className="flex-1 overflow-y-auto p-2">
+          {isFriendsMode ? (
+            <>
+              <AddFriend />
+              <FriendList friends={friends} />
+            </>
+          ): (
+            <div className="flex flex-col space-y-2">
+              <h2 className="text-lg font-semibold text-text">Channels</h2>
+              <ul className="space-y-1">
+                <li className="p-2 rounded hover:bg-highlight-low cursor-pointer">
+                  <span className="text-text"># general</span>
+                </li>
+                <li className="p-2 rounded hover:bg-highlight-low cursor-pointer">
+                  <span className="text-text"># random</span>
+                </li>
+                {/* Add more channels as needed */}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* User Status */}

@@ -29,11 +29,7 @@ class ApiClient {
       throw new Error('Unauthorized')
     }
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
-    return response.json()
+    return response
   }
 
   // Convenience methods

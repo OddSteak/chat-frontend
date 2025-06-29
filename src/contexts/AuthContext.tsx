@@ -31,7 +31,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUser = async () => {
     try {
       const data = await apiClient.get("/api/auth/me")
-      setUser(data.user)
+      const dat = await data.json()
+      setUser(dat.user)
     } catch (error) {
       console.error("Error fetching user:", error)
       setError(true)
@@ -47,12 +48,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       startRetryLoop(
         async () => {
           const data = await apiClient.get("/api/auth/me");
-          return data;
+          return await data.json();
         },
         (data: any) => {
           console.log('Connection restored successfully!');
           setLoading(false);
-          setUser(data.user);
+          setUser(data.datauser);
           setError(false);
         },
         () => {

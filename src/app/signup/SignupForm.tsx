@@ -93,7 +93,7 @@ export default function SignupForm() {
       </button>
 
       {error && (
-        <div className="mb-4 p-3 text-love">
+        <div className="mb-4 p-3 text-sm text-love">
           {error}
         </div>
       )}
