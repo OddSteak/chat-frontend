@@ -3,15 +3,10 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { apiClient } from '@/lib/api'
 import { useRetryConnection } from '@/hooks/useRetryConnection'
-
-interface UserData {
-  id: number
-  email: string
-  username: string
-}
+import { User } from '@/types/User'
 
 interface AuthContextType {
-  user: UserData | null
+  user: User | null
   loading: boolean
   error: boolean
   login: (username: string, password: string) => Promise<boolean>
@@ -23,7 +18,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserData | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const { retryState, startRetryLoop, stopRetryLoop } = useRetryConnection();

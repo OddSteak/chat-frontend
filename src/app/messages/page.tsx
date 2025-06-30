@@ -6,9 +6,14 @@ import { useRetryConnection } from "@/hooks/useRetryConnection";
 import { apiClient } from "@/lib/api";
 import FriendList from "./FriendList";
 import AddFriend from "./AddFriend";
+import Requests from "./Requests";
+import ProfileModal from "./ProfileModal";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ChatRoom() {
   const { retryState, startRetryLoop, stopRetryLoop } = useRetryConnection();
+  const { user, loading: loadingUser, error: errorUser } = useAuth();
+  const [isModalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [messages, setMessages] = useState(null);
@@ -16,7 +21,11 @@ export default function ChatRoom() {
   const [isFriendsMode, setIsFriendsMode] = useState(true);
   const [friends, setFriends] = useState([]);
 
-  useEffect(() => {
+  // friend requests
+  const [incomingRequests, setIncomingRequests] = useState([]);
+  const [outgoingRequests, setOutgoingRequests] = useState([]);
+
+  /* useEffect(() => {
     startRetryLoop(
       async () => {
         const data = await apiClient.get("/api/get-pms");
@@ -34,7 +43,7 @@ export default function ChatRoom() {
         setError(true);
       }
     );
-  }, [])
+  }, []) */
 
   useEffect(() => {
     startRetryLoop(
@@ -56,17 +65,41 @@ export default function ChatRoom() {
     );
   }, [])
 
+  useEffect(() => {
+    startRetryLoop(
+      async () => {
+        const data = await apiClient.get("/api/friends/get-requests");
+        const dat = await data.json();
+        console.log(dat);
+        return dat;
+      },
+      (data: any) => {
+        console.log("successfully fetched messages!")
+        setLoading(false);
+        setIncomingRequests(data.pendingRequests.filter((req: any) => !req.outgoing));
+        setOutgoingRequests(data.pendingRequests.filter((req: any) => req.outgoing));
+        setError(false);
+      },
+      () => {
+        console.log("failed to fetch messages");
+        setLoading(false);
+        setError(true);
+      }
+    );
+  }, [])
+
   return (
     <div className="flex h-screen bg-base">
+      {isModalOpen && <ProfileModal setModalOpen={setModalOpen} reqs={incomingRequests} outgoingReqs={outgoingRequests} friends={friends} />}
       {/* Left Panel */}
       <div className="w-60 bg-surface border-r border-highlight-high flex flex-col">
         {/* Profile Section */}
         <div className="p-6 border-b border-highlight-high">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-overlay rounded-full flex items-center justify-center">
+            <button onClick={() => setModalOpen(true)} className="w-10 h-10 bg-overlay rounded-full flex items-center justify-center">
               <span className="text-text font-medium">J</span>
-            </div>
-            <ProfileData />
+            </button>
+            <ProfileData user={user} loading={loadingUser} error={errorUser} />
           </div>
         </div>
 

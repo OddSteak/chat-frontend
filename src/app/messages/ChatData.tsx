@@ -1,10 +1,14 @@
 'use client'
 
-import { useAuth } from "@/contexts/AuthContext";
+import { User } from '@/types/User';
 
-export function ProfileData() {
-  const { user, loading, error } = useAuth();
+interface ProfileDataProps {
+  user: User | null;
+  loading: boolean;
+  error: boolean;
+}
 
+export function ProfileData({ user, loading, error }:  ProfileDataProps) {
   if (loading) {
     return (
       <div className="text-center p-4">
