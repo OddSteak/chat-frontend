@@ -135,10 +135,7 @@ export default function ChatRoom() {
         {/* Channels/Rooms */}
         <div className="flex-1 overflow-y-auto p-2">
           {isFriendsMode ? (
-            <>
-              <AddFriend />
-              <FriendList friends={friends} />
-            </>
+            <FriendList friends={friends} />
           ): (
             <div className="flex flex-col space-y-2">
               <h2 className="text-lg font-semibold text-text">Channels</h2>

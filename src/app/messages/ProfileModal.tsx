@@ -1,23 +1,28 @@
 import UserDetails from "@/app/profile/UserDetails";
 
 import { useState } from "react";
-import { RequestData } from "@/types/User";
+import { Friend, RequestData } from "@/types/User";
 import Requests from "./Requests";
+import AddFriend from "./AddFriend";
+import FriendList from "./FriendList";
 
 enum ModalTabs {
   PROFILE = 'Profile',
   REQUESTS = 'Friend Requests',
-  OUTGOING_REQUESTS = 'Sent Requests'
+  OUTGOING_REQUESTS = 'Sent Requests',
+  FRIENDS = 'Friends'
 }
 
 interface ProfileModalProps {
   setModalOpen: (open: boolean) => void;
   reqs: RequestData[];
   outgoingReqs: RequestData[];
+  friends: Friend[];
 }
 
-export default function ProfileModal({ setModalOpen, reqs, outgoingReqs }: ProfileModalProps) {
-  const [tab, setTab] = useState < ModalTabs > (ModalTabs.PROFILE);
+export default function ProfileModal({ setModalOpen, reqs, outgoingReqs, friends }: ProfileModalProps) {
+  const [tab, setTab] = useState <ModalTabs> (ModalTabs.PROFILE);
+  const tabList = Object.values(ModalTabs);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-overlay z-50">
@@ -25,33 +30,26 @@ export default function ProfileModal({ setModalOpen, reqs, outgoingReqs }: Profi
         {/* sidebar */}
         <div id="sidebar" className="flex flex-col items-center justify-center bg-surface rounded-lg p-4 w-44 h-full">
           <div className="flex w-full flex-col items-center space-y-4">
-            <button
-              className={`w-full border-highlight-high text-center p-2 rounded-lg ${tab === ModalTabs.PROFILE ? 'bg-highlight-med' : 'bg-overlay'}`}
-              onClick={() => setTab(ModalTabs.PROFILE)}
-            >
-              {ModalTabs.PROFILE}
-            </button>
-            <button
-              className={`w-full border-highlight-high text-center p-2 rounded-lg ${tab === ModalTabs.REQUESTS ? 'bg-highlight-med' : 'bg-overlay'}`}
-              onClick={() => setTab(ModalTabs.REQUESTS)}
-            >
-              {ModalTabs.REQUESTS}
-            </button>
-            <button
-              className={`w-full border-highlight-high text-center p-2 rounded-lg ${tab === ModalTabs.OUTGOING_REQUESTS ? 'bg-highlight-med' : 'bg-overlay'}`}
-              onClick={() => setTab(ModalTabs.OUTGOING_REQUESTS)}>
-              {ModalTabs.OUTGOING_REQUESTS}
-            </button>
+            {tabList.map((tabName) => (
+              <button
+                key={tabName}
+                className={`w-full border-highlight-high text-center p-2 hover:bg-highlight-med rounded-lg ${tab === tabName as ModalTabs ? 'bg-highlight-med' : 'bg-overlay'}`}
+                onClick={() => setTab(tabName as ModalTabs)}
+              >
+                {tabName}
+              </button>
+            ))}
           </div>
         </div>
 
         {/* main content */}
         <div className="bg-overlay flex-1 rounded-lg p-8 mt-8">
-          {tab === ModalTabs.PROFILE ?
-            <ProfileTabContent /> :
-            tab === ModalTabs.REQUESTS ?
-              <FriendsTabContent reqs={reqs} /> :
-              <OutgoingRequestsTabContent outgoingReqs={outgoingReqs} /> }
+          {{
+            [ModalTabs.PROFILE]: <ProfileTabContent />,
+            [ModalTabs.REQUESTS]: <IncomingRequestsTabContent reqs={reqs} />,
+            [ModalTabs.OUTGOING_REQUESTS]: <OutgoingRequestsTabContent outgoingReqs={outgoingReqs} />,
+            [ModalTabs.FRIENDS]: <FriendsTabContent friends={friends} />
+          }[tab]}
         </div>
 
         {/* close button */}
@@ -84,7 +82,7 @@ function ProfileTabContent() {
   );
 }
 
-function FriendsTabContent({ reqs }: { reqs: RequestData[] }) {
+function IncomingRequestsTabContent({ reqs }: { reqs: RequestData[] }) {
   return (
     <Requests reqs={reqs} outgoing={false} />
   )
@@ -94,4 +92,16 @@ function OutgoingRequestsTabContent({ outgoingReqs }: { outgoingReqs: RequestDat
   return (
     <Requests reqs={outgoingReqs} outgoing={true} />
   )
+}
+
+function FriendsTabContent({ friends }: { friends: Friend[] }) {
+  return (
+    <div className="flex flex-col space-y-2">
+      <div className="flex flex-col bg-surface rounded-lg p-4 shadow-lg">
+        <h2 className="text-lg text-muted">Add Friend</h2>
+        <AddFriend />
+      </div>
+      <FriendList friends={friends} />
+    </div>
+  );
 }

@@ -53,21 +53,22 @@ export default function AddFriend() {
 
   return (
     <>
-      <div className="p-1 h-12 mt-2 w-full self-center">
-        <div className="h-full focus-within:ring-2 focus-within:ring-highlight-high bg-overlay rounded-lg">
-          <form className="flex flex-row flex-1 p-1 h-full  w-full" onSubmit={handleSubmit}>
-            <input name="username" className="rounded-lg h-full w-40 focus:outline-none" placeholder="username"></input>
+      <div className="p-1 mt-2 self-center">
+        <div className="h-12 w-100 focus-within:ring-2 focus-within:ring-highlight-high bg-overlay rounded-lg">
+          <form className="flex flex-row flex-1 p-1 h-full w-full" onSubmit={handleSubmit}>
+            <input name="username" className="rounded-lg h-full w-85 focus:outline-none" placeholder="username"></input>
             <button className="flex-1 h-full text-sm rounded-lg bg-highlight-low text-text hover:bg-highlight-high transition-colors">
               Send
             </button>
           </form>
         </div>
+
+        {result && (
+          <div className={`${error ? `text-love` : `text-text`} text-xs mt-1`}>
+            {loading ? "Loading..." : result}
+          </div>
+        )}
       </div>
-      {result && (
-        <div className={`${error ? `text-love` : `text-text`} h-10 text-xs mt-1`}>
-          {loading ? "Loading..." : result}
-        </div>
-      )}
     </>
   )
 }
