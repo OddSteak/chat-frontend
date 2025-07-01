@@ -5,11 +5,10 @@ import { Friend } from "@/types/User";
 
 interface FriendListProps {
   friends: Friend[];
-  removeOption?: boolean;
   handleRemovingFriend?: (removeFriend: string) => void;
 }
 
-export default function FriendList({ friends, removeOption = false, handleRemovingFriend }: FriendListProps) {
+export default function FriendList({ friends, handleRemovingFriend }: FriendListProps) {
   const removeFriend = async (username: string) => {
     try {
       const response = await apiClient.post(`/api/friends/remove-friend?friendName=${username}`, {});
@@ -34,11 +33,11 @@ export default function FriendList({ friends, removeOption = false, handleRemovi
               <span className="text-text font-medium">J</span>
             </div>
             <span className="text-text">{friend.username}</span>
-            {removeOption && <button
+            <button
               className={"ml-auto h-5 w-5 bg-love text-text hover:bg-red-600 transition-colors rounded-lg"}
               onClick={() => removeFriend(friend.username)}>
               ✗
-            </button>}
+            </button>
           </li>
         ))}
       </ul>

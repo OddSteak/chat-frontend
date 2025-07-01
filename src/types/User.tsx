@@ -16,3 +16,9 @@ export interface RequestData {
   username: string;
 }
 
+export interface MessageData {
+  sender: string;
+  recipient: string;
+  content: string;
+  type: string;
+}
