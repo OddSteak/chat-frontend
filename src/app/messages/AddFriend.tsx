@@ -3,8 +3,13 @@
 import { useState } from "react";
 import { apiClient } from "@/lib/api";
 import { httpStatus } from "@/lib/httpStatus";
+import { RequestData } from "@/types/User";
 
-export default function AddFriend() {
+interface AddFriendProps {
+  handleAddingReq: (req: RequestData, outgoing: boolean) => void;
+}
+
+export default function AddFriend({ handleAddingReq }:  AddFriendProps) {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState('');
@@ -39,6 +44,8 @@ export default function AddFriend() {
         }
       } else if (response.ok) {
         setResult("successfully sent friend request");
+        handleAddingReq({ id: res.id, username: res.username }, true);
+        console.log(res);
       } else {
         setError(true);
         setResult("An unknown error occurred.");
@@ -56,8 +63,8 @@ export default function AddFriend() {
       <div className="p-1 mt-2 self-center">
         <div className="h-12 w-100 focus-within:ring-2 focus-within:ring-highlight-high bg-overlay rounded-lg">
           <form className="flex flex-row flex-1 p-1 h-full w-full" onSubmit={handleSubmit}>
-            <input name="username" className="rounded-lg h-full w-85 focus:outline-none" placeholder="username"></input>
-            <button className="flex-1 h-full text-sm rounded-lg bg-highlight-low text-text hover:bg-highlight-high transition-colors">
+            <input name="username" className="rounded-lg h-full flex-3/4 focus:outline-none" placeholder="username"></input>
+            <button className="flex-1/4 h-full text-sm rounded-lg bg-highlight-low text-text hover:bg-highlight-high transition-colors">
               Send
             </button>
           </form>

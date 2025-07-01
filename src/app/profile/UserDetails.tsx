@@ -3,7 +3,12 @@
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function UserDetails() {
-  const { user, loading, error, refetch } = useAuth();
+  const { user, loading, error, refetch, logout } = useAuth();
+
+  const logoutAndRedirect = async () => {
+    await logout();
+    window.location.href = '/login'; // Redirect to login page after logout
+  };
 
   if (loading) {
     return <p className="text-text text-center">Loading...</p>
@@ -28,9 +33,12 @@ export default function UserDetails() {
   }
 
   return (
-    <div className="text-text">
+    <div className="flex flex-col text-text">
       <p className="mb-2">Email: {user.email}</p>
       <p>Username: {user.username}</p>
+      <button className="mt-4 px-4 py-2 self-center bg-pine text-text rounded hover:bg-blue-700" onClick={logoutAndRedirect}>
+        Logout
+      </button>
     </div>
   )
 }

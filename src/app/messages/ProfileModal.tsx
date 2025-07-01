@@ -9,19 +9,23 @@ import FriendList from "./FriendList";
 enum ModalTabs {
   PROFILE = 'Profile',
   REQUESTS = 'Friend Requests',
-  OUTGOING_REQUESTS = 'Sent Requests',
+  OUTGOING_REQUESTS = 'Add Friend',
   FRIENDS = 'Friends'
 }
 
 interface ProfileModalProps {
   setModalOpen: (open: boolean) => void;
-  reqs: RequestData[];
+  incomingReqs: RequestData[];
   outgoingReqs: RequestData[];
+  handleAddingReqs: (newReq: RequestData, outgoing: boolean) => void;
+  handleRemovingReqs: (removeReq: RequestData, outgoing: boolean) => void;
+  handleAddingFriend: (newFriend: Friend) => void;
+  handleRemovingFriend: (removeFriend: string) => void;
   friends: Friend[];
 }
 
-export default function ProfileModal({ setModalOpen, reqs, outgoingReqs, friends }: ProfileModalProps) {
-  const [tab, setTab] = useState <ModalTabs> (ModalTabs.PROFILE);
+export default function ProfileModal({ setModalOpen, incomingReqs, outgoingReqs, friends, handleAddingReqs, handleRemovingReqs, handleAddingFriend, handleRemovingFriend }: ProfileModalProps) {
+  const [tab, setTab] = useState < ModalTabs > (ModalTabs.PROFILE);
   const tabList = Object.values(ModalTabs);
 
   return (
@@ -46,9 +50,9 @@ export default function ProfileModal({ setModalOpen, reqs, outgoingReqs, friends
         <div className="bg-overlay flex-1 rounded-lg p-8 mt-8">
           {{
             [ModalTabs.PROFILE]: <ProfileTabContent />,
-            [ModalTabs.REQUESTS]: <IncomingRequestsTabContent reqs={reqs} />,
-            [ModalTabs.OUTGOING_REQUESTS]: <OutgoingRequestsTabContent outgoingReqs={outgoingReqs} />,
-            [ModalTabs.FRIENDS]: <FriendsTabContent friends={friends} />
+            [ModalTabs.REQUESTS]: <IncomingRequestsTabContent incomingReqs={incomingReqs} handleAddingReqs={handleAddingReqs} handleRemovingReqs={handleRemovingReqs} handleAddingFriend={handleAddingFriend} handleRemovingFriend={handleRemovingFriend} />,
+            [ModalTabs.OUTGOING_REQUESTS]: <OutgoingRequestsTabContent outgoingReqs={outgoingReqs} handleAddingReqs={handleAddingReqs} handleRemovingReqs={handleRemovingReqs} handleAddingFriend={handleAddingFriend} handleRemovingFriend={handleRemovingFriend} />,
+            [ModalTabs.FRIENDS]: <FriendsTabContent friends={friends} handleRemovingFriend={handleRemovingFriend} />
           }[tab]}
         </div>
 
@@ -82,26 +86,42 @@ function ProfileTabContent() {
   );
 }
 
-function IncomingRequestsTabContent({ reqs }: { reqs: RequestData[] }) {
+function IncomingRequestsTabContent({ incomingReqs, handleAddingReqs, handleRemovingReqs, handleAddingFriend, handleRemovingFriend }: any){
   return (
-    <Requests reqs={reqs} outgoing={false} />
+    <Requests
+      reqs={incomingReqs}
+      outgoing={false}
+      handleAddingReqs={handleAddingReqs}
+      handleRemovingReqs={handleRemovingReqs}
+      handleAddingFriend={handleAddingFriend}
+      handleRemovingFriend={handleRemovingFriend}  />
   )
 }
 
-function OutgoingRequestsTabContent({ outgoingReqs }: { outgoingReqs: RequestData[] }) {
-  return (
-    <Requests reqs={outgoingReqs} outgoing={true} />
-  )
-}
-
-function FriendsTabContent({ friends }: { friends: Friend[] }) {
+function OutgoingRequestsTabContent({ outgoingReqs, handleAddingReqs, handleRemovingReqs, handleAddingFriend, handleRemovingFriend }: any) {
   return (
     <div className="flex flex-col space-y-2">
       <div className="flex flex-col bg-surface rounded-lg p-4 shadow-lg">
         <h2 className="text-lg text-muted">Add Friend</h2>
-        <AddFriend />
+        <AddFriend handleAddingReq={handleAddingReqs} />
       </div>
-      <FriendList friends={friends} />
+      {outgoingReqs.length > 0 && <div className="flex flex-col bg-surface rounded-lg p-4 shadow-lg">
+        <h2 className="text-lg text-muted">Sent Requests</h2>
+        <Requests
+          reqs={outgoingReqs}
+          outgoing={true}
+          handleAddingReqs={handleAddingReqs}
+          handleRemovingReqs={handleRemovingReqs}
+          handleAddingFriend={handleAddingFriend}
+          handleRemovingFriend={handleRemovingFriend}  />
+      </div>}
     </div>
+  )
+}
+
+function FriendsTabContent({ friends, handleRemovingFriend }: any) {
+  return (
+    <FriendList friends={friends} removeOption={true} handleRemovingFriend={handleRemovingFriend} />
   );
 }
+

@@ -5,10 +5,9 @@ import { ProfileData } from "./ChatData";
 import { useRetryConnection } from "@/hooks/useRetryConnection";
 import { apiClient } from "@/lib/api";
 import FriendList from "./FriendList";
-import AddFriend from "./AddFriend";
-import Requests from "./Requests";
 import ProfileModal from "./ProfileModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { Friend, RequestData } from "@/types/User";
 
 export default function ChatRoom() {
   const { retryState, startRetryLoop, stopRetryLoop } = useRetryConnection();
@@ -19,11 +18,11 @@ export default function ChatRoom() {
   const [messages, setMessages] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isFriendsMode, setIsFriendsMode] = useState(true);
-  const [friends, setFriends] = useState([]);
+  const [friends, setFriends] = useState < Friend[] > ([]);
 
   // friend requests
-  const [incomingRequests, setIncomingRequests] = useState([]);
-  const [outgoingRequests, setOutgoingRequests] = useState([]);
+  const [incomingRequests, setIncomingRequests] = useState < RequestData[] > ([]);
+  const [outgoingRequests, setOutgoingRequests] = useState < RequestData[] > ([]);
 
   /* useEffect(() => {
     startRetryLoop(
@@ -88,9 +87,38 @@ export default function ChatRoom() {
     );
   }, [])
 
+  const handleAddingReqs = (newReq: RequestData, outgoing: boolean) => {
+    outgoing ?
+      setOutgoingRequests(prevState => [...prevState, newReq]) :
+      setIncomingRequests(prevState => [...prevState, newReq]);
+  }
+
+  const handleRemovingReqs = (removeReq: RequestData, outgoing: boolean) => {
+    outgoing ?
+      setOutgoingRequests(prevState => prevState.filter(req => req.id !== removeReq.id)) :
+      setIncomingRequests(prevState => prevState.filter(req => req.id !== removeReq.id));
+  }
+
+  const handleAddingFriend = (newFriend: Friend) => {
+    setFriends(prevState => [...prevState, newFriend]);
+  }
+
+  const handleRemovingFriend = (removeFriend: string) => {
+    setFriends(prevState => prevState.filter(friend => friend.username !== removeFriend));
+  }
+
   return (
     <div className="flex h-screen bg-base">
-      {isModalOpen && <ProfileModal setModalOpen={setModalOpen} reqs={incomingRequests} outgoingReqs={outgoingRequests} friends={friends} />}
+      {isModalOpen && <ProfileModal
+        setModalOpen={setModalOpen}
+        incomingReqs={incomingRequests}
+        outgoingReqs={outgoingRequests}
+        friends={friends}
+        handleAddingReqs={handleAddingReqs}
+        handleRemovingReqs={handleRemovingReqs}
+        handleAddingFriend={handleAddingFriend}
+        handleRemovingFriend={handleRemovingFriend} />}
+
       {/* Left Panel */}
       <div className="w-60 bg-surface border-r border-highlight-high flex flex-col">
         {/* Profile Section */}
@@ -118,12 +146,12 @@ export default function ChatRoom() {
         <div className="p-2 h-14 mt-2 w-full self-center">
           <div className="h-full rounded-lg border-highlight-low shadow-sm text-text bg-overlay">
             <div className="p-1 h-full flex flex-row justify-center justify-items-center">
-              <button className={`flex-1 ${ !isFriendsMode ? `bg-highlight-med` : `` } rounded-sm text-center justify-items-center`}>
+              <button className={`flex-1 ${!isFriendsMode ? `bg-highlight-med` : ``} rounded-sm text-center justify-items-center`}>
                 <span className="h-full text-center" onClick={() => setIsFriendsMode(false)}>
                   rooms
                 </span>
               </button>
-              <button className={`flex-1 ${ isFriendsMode ? `bg-highlight-med` : `` } rounded-sm text-center justify-items-center`}>
+              <button className={`flex-1 ${isFriendsMode ? `bg-highlight-med` : ``} rounded-sm text-center justify-items-center`}>
                 <span className="h-full text-center" onClick={() => setIsFriendsMode(true)}>
                   friends
                 </span>
@@ -136,7 +164,7 @@ export default function ChatRoom() {
         <div className="flex-1 overflow-y-auto p-2">
           {isFriendsMode ? (
             <FriendList friends={friends} />
-          ): (
+          ) : (
             <div className="flex flex-col space-y-2">
               <h2 className="text-lg font-semibold text-text">Channels</h2>
               <ul className="space-y-1">
