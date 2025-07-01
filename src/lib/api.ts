@@ -25,17 +25,11 @@ class ApiClient {
       if (typeof window !== 'undefined') {
         // Trigger logout in your auth context
         window.dispatchEvent(new CustomEvent('unauthorized'))
-        // Redirect to login
-        window.location.href = '/login'
       }
       throw new Error('Unauthorized')
     }
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
-    return response.json()
+    return response
   }
 
   // Convenience methods
@@ -46,6 +40,13 @@ class ApiClient {
   post(endpoint: string, data: any) {
     return this.request(endpoint, {
       method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  delete(endpoint: string, data: any) {
+    return this.request(endpoint, {
+      method: 'DELETE',
       body: JSON.stringify(data),
     })
   }

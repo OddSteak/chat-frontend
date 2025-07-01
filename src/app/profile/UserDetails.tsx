@@ -1,52 +1,44 @@
 'use client'
 
-import { useEffect, useState } from 'react';
-import { apiClient } from '@/lib/api';
-
-interface UserData {
-  id: number;
-  email: string;
-  username: string;
-}
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function UserDetails() {
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const { user, loading, error, refetch, logout } = useAuth();
 
+  const logoutAndRedirect = async () => {
+    await logout();
+    window.location.href = '/login'; // Redirect to login page after logout
+  };
 
-  useEffect(() => {
-    const getData = async () => {
-      try {
-        const data = await apiClient.get("/api/auth/me");
-        setUserData(data.user);
-        setError(false);
-      } catch (error) {
-        console.error("Network error:", error);
-        setError(true);
-        setUserData(null);
-      } finally {
-        setLoading(false);
-      }
-    }
+  if (loading) {
+    return <p className="text-text text-center">Loading...</p>
+  }
 
-    getData();
-  }, []);
+  if (error) {
+    return (
+      <div className="text-center">
+        <p className="text-love mb-2">Failed to load profile data.</p>
+        <button
+          onClick={refetch}
+          className="px-4 py-2 bg-pine text-text rounded hover:bg-blue-700"
+        >
+          Retry
+        </button>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <p className="text-love text-center">No user data available.</p>
+  }
 
   return (
-    <>
-      {loading ? (
-        <p className="text-text text-center">Loading...</p>
-      ) : error ? (
-        <p className="text-red-500 text-center">Failed to load profile data.</p>
-      ) : userData ? (
-        <div className="text-text">
-          <p className="mb-2">Email: {userData.email}</p>
-          <p>Username: {userData.username}</p>
-        </div>
-      ) : (
-        <p className="text-red-500 text-center">No user data available.</p>
-      )}
-    </>
+    <div className="flex flex-col text-text">
+      <p className="mb-2">Email: {user.email}</p>
+      <p>Username: {user.username}</p>
+      <button className="mt-4 px-4 py-2 self-center bg-pine text-text rounded hover:bg-blue-700" onClick={logoutAndRedirect}>
+        Logout
+      </button>
+    </div>
   )
 }
