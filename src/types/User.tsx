@@ -17,8 +17,8 @@ export interface RequestData {
 }
 
 export interface MessageData {
-  sender: string;
-  recipient: string;
+  senderName: string;
+  recipientName: string;
   content: string;
-  type: string;
+  timestamp: string;
 }

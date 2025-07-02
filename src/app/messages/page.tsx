@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { ProfileData } from "./ChatData";
 import { useRetryConnection } from "@/hooks/useRetryConnection";
 import { apiClient } from "@/lib/api";
-import FriendList from "./FriendList";
 import ProfileModal from "./ProfileModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { Friend, MessageData, RequestData } from "@/types/User";
@@ -25,7 +24,7 @@ export default function ChatRoom() {
   const [isFriendsMode, setIsFriendsMode] = useState(true);
 
   // selected chat
-  const [selectedFriend, setSelectedFriend] = useState('');
+  const [selectedFriend, setSelectedFriend] = useState<string | null>(null);
 
   // api requests
   const [messages, setMessages] = useState<MessageMap | null>(null);
@@ -78,7 +77,6 @@ export default function ChatRoom() {
       async () => {
         const data = await apiClient.get("/api/friends/get-requests");
         const dat = await data.json();
-        console.log(dat);
         return dat;
       },
       (data: any) => {
@@ -114,6 +112,19 @@ export default function ChatRoom() {
 
   const handleRemovingFriend = (removeFriend: string) => {
     setFriends(prevState => prevState.filter(friend => friend.username !== removeFriend));
+  }
+
+  const addMessageToUser = (message: MessageData) => {
+    const currentUser = user; // get the latest user from context
+    const username = message.senderName === currentUser?.username ? message.recipientName : message.senderName;
+    setMessages(prevMessages => {
+      prevMessages = prevMessages || {};
+      const userMessages = prevMessages[username] || [];
+      return {
+        ...prevMessages,
+        [username]: [...userMessages, message]
+      };
+    });
   }
 
   return (
@@ -161,7 +172,7 @@ export default function ChatRoom() {
         {/* Channels/Rooms */}
         <div className="flex-1 overflow-y-auto p-2">
           {isFriendsMode ? (
-            <FriendChat friends={friends} setSelectedFriend={setSelectedFriend} />
+            <FriendChat friends={friends} selectedFriend={selectedFriend} setSelectedFriend={setSelectedFriend} />
           ) : (
             <RoomList />
           )}
@@ -199,17 +210,16 @@ export default function ChatRoom() {
         </div>
 
         {/* Messages Area */}
-        {isFriendsMode ?
-          <FriendChatComponent recipientUsername={selectedFriend} messages={messages?.selectedFriend} setMessages={setMessages} /> :
+        {isFriendsMode ? (
+          <div className="flex-1 bg-base overflow-hidden space-y-4">
+            <FriendChatComponent recipientUsername={selectedFriend} messages={messages} addMessageToUser={addMessageToUser} />
+          </div>
+          ) :
           (
             <div className="flex-1 bg-base overflow-y-auto p-6 space-y-4">
             </div>
           )
         }
-
-        {/* Input Area */}
-        <div className="bg-surface text-text border-t border-highlight-high p-4">
-        </div>
       </div>
     </div>
   );
