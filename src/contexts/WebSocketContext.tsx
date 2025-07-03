@@ -16,11 +16,10 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
       reconnectDelay: 5000,
       onConnect: () => {
-        console.log('WebSocket Connected!');
         setStompClient(client);
       },
       onDisconnect: () => {
-        console.log('WebSocket Disconnected!');
+        console.error('WebSocket Disconnected!');
         setStompClient(null);
       },
       onStompError: (frame) => {

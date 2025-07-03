@@ -42,7 +42,7 @@ export default function FriendChatComponent({ recipientUsername, messages, addMe
         console.error('Received an error from the server:', error.body);
       });
 
-      // Cleanup function to unsubscribe when the component unmounts or client changes
+      // Cleanup function
       return () => {
         privateSub.unsubscribe();
         errorSub.unsubscribe();
@@ -53,7 +53,6 @@ export default function FriendChatComponent({ recipientUsername, messages, addMe
   // Function to send a message
   const sendMessage = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    console.log(messages);
 
     if (!recipientUsername) {
       console.error("Recipient username is not set.");

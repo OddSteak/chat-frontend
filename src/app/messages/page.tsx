@@ -32,6 +32,7 @@ export default function ChatRoom() {
   const [incomingRequests, setIncomingRequests] = useState<RequestData[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<RequestData[]>([]);
 
+  // fetch private messages
   useEffect(() => {
     startRetryLoop(
       async () => {
@@ -39,7 +40,6 @@ export default function ChatRoom() {
         return await data.json();
       },
       (data: Record<string, MessageMap>) => {
-        console.log("successfully fetched messages!")
         setLoading(false);
         setMessages(data.messages);
         setError(false);
@@ -52,6 +52,7 @@ export default function ChatRoom() {
     );
   }, [])
 
+  // fetch friends
   useEffect(() => {
     startRetryLoop(
       async () => {
@@ -59,7 +60,6 @@ export default function ChatRoom() {
         return await data.json();
       },
       (data: any) => {
-        console.log("successfully fetched messages!")
         setLoading(false);
         setFriends(data.friends);
         setError(false);
@@ -72,6 +72,7 @@ export default function ChatRoom() {
     );
   }, [])
 
+  // fetch friend requests
   useEffect(() => {
     startRetryLoop(
       async () => {
@@ -80,7 +81,6 @@ export default function ChatRoom() {
         return dat;
       },
       (data: any) => {
-        console.log("successfully fetched messages!")
         setLoading(false);
         setIncomingRequests(data.pendingRequests.filter((req: any) => !req.outgoing));
         setOutgoingRequests(data.pendingRequests.filter((req: any) => req.outgoing));

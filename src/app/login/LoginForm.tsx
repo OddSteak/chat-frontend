@@ -7,15 +7,21 @@ import { useEffect, useState } from 'react';
 export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { login, user } = useAuth();
+  const { login, user, setShowNotifications } = useAuth();
   const router = useRouter();
+
+  // disable failure to fetch user notifications on login page
+  useEffect(() => {
+    setShowNotifications(false);
+    return () => { setShowNotifications(true); }
+  }, [setShowNotifications]);
 
   // redirect to profile if user is already logged in
   useEffect(() => {
     if (user && !isLoading) {
       router.push("/profile");
     }
-  }, [user, isLoading, router]);
+  }, [user]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -31,10 +37,9 @@ export default function LoginForm() {
     try {
       const success = await login(userData.username, userData.password);
       if (success) {
-        router.push("/profile")
+        router.push("/profile");
       } else {
-        setError("Login failed. Please check your credentials.");
-        console.error("Login failed");
+        throw new Error("Login failed");
       }
     } catch (err) {
       console.error("Login error:", err);
@@ -86,6 +91,6 @@ export default function LoginForm() {
       <span className="text-sm text-text mt-4 block text-center">new user? <a href="/signup" className="text-iris hover:underline">Sign up</a></span>
     </form>
 
-  )
+  );
 }
 

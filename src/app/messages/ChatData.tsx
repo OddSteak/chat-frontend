@@ -17,7 +17,7 @@ export function ProfileData({ user, loading, error }:  ProfileDataProps) {
     );
   }
 
-  if (error && !loading) {
+  if (error) {
     return (
       <div className="text-center p-4">
         <p className="text-love mb-3">Connection failed</p>

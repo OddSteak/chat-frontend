@@ -31,7 +31,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ToastProvider>
-          <AuthProvider>
+          <AuthProvider initialShowNotifications={true}>
             <WebSocketProvider>
               {children}
             </WebSocketProvider>
