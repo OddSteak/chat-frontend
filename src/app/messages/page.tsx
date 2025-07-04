@@ -6,12 +6,10 @@ import { useRetryConnection } from "@/hooks/useRetryConnection";
 import { apiClient } from "@/lib/api";
 import ProfileModal from "./ProfileModal";
 import { useAuth } from "@/contexts/AuthContext";
-import { Friend, MessageData, RequestData } from "@/types/User";
+import { Friend, MessageData, MessageMap, RecievedMessageData, RequestData } from "@/types/User";
 import RoomList from "./RoomList";
 import FriendChat from "./FriendChat";
 import FriendChatComponent from "./FriendChatComponent";
-
-type MessageMap = Record<string, MessageData[]>;
 
 export default function ChatRoom() {
   const { startRetryLoop } = useRetryConnection();
@@ -39,9 +37,18 @@ export default function ChatRoom() {
         const data = await apiClient.get("/api/get-pms");
         return await data.json();
       },
-      (data: Record<string, MessageMap>) => {
+      (data: Record<string, RecievedMessageData>) => {
         setLoading(false);
-        setMessages(data.messages);
+        const convertedMessages: MessageMap = {}
+
+        for (const [username, messages] of Object.entries(data.messages)) {
+          convertedMessages[username] = messages.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }))
+        }
+
+        setMessages(convertedMessages);
         setError(false);
       },
       () => {
@@ -114,15 +121,21 @@ export default function ChatRoom() {
     setFriends(prevState => prevState.filter(friend => friend.username !== removeFriend));
   }
 
-  const addMessageToUser = (message: MessageData) => {
+  const addMessageToUser = (message: RecievedMessageData) => {
     const currentUser = user; // get the latest user from context
     const username = message.senderName === currentUser?.username ? message.recipientName : message.senderName;
+
+    const converted: MessageData = {
+      ...message,
+      timestamp: new Date(message.timestamp)
+    }
+
     setMessages(prevMessages => {
       prevMessages = prevMessages || {};
       const userMessages = prevMessages[username] || [];
       return {
         ...prevMessages,
-        [username]: [...userMessages, message]
+        [username]: [...userMessages, converted]
       };
     });
   }
@@ -145,7 +158,7 @@ export default function ChatRoom() {
         <div className="p-6 border-b border-highlight-high">
           <div className="flex items-center space-x-3">
             <button onClick={() => setModalOpen(true)} className="w-10 h-10 bg-overlay rounded-full flex items-center justify-center">
-              <span className="text-text font-medium">J</span>
+              <span className="text-text font-medium">{user?.username[0] || "L"}</span>
             </button>
             <ProfileData user={user} loading={loadingUser} error={errorUser} />
           </div>
@@ -199,7 +212,7 @@ export default function ChatRoom() {
         <div className="bg-surface border-b border-highlight-high px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-text"># general</h2>
+              <h2 className="text-lg font-semibold text-text">{selectedFriend}</h2>
             </div>
             <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

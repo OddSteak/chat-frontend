@@ -30,7 +30,7 @@ export default function FriendList({ friends, handleRemovingFriend }: FriendList
         {friends.map((friend) => (
           <li key={friend.id} className="flex flex-row items-center space-x-2">
             <div className="w-7 h-7 bg-overlay rounded-full flex items-center justify-center">
-              <span className="text-text font-medium">J</span>
+              <span className="text-text font-medium">{friend.username[0]}</span>
             </div>
             <span className="text-text">{friend.username}</span>
             <button

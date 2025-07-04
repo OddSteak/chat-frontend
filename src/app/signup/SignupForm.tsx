@@ -18,9 +18,8 @@ export default function SignupForm() {
 
   // redirect to profile if user is already logged in
   useEffect(() => {
-    if (user && !isLoading) {
+    if (user && !isLoading)
       router.push("/profile");
-    }
   }, [user, isLoading, router]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

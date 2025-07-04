@@ -1,15 +1,14 @@
 'use client'
 
 import { useWebSocket } from '@/contexts/WebSocketContext';
-import { MessageData, User } from '@/types/User';
+import { MessageMap, RecievedMessageData } from '@/types/User';
 import React, { useEffect, useRef, useState } from 'react';
-
-type MessageMap = Record<string, MessageData[]>;
+import MessageList from './MessageList';
 
 interface FriendChatComponentProps {
   recipientUsername: string | null;
   messages: MessageMap | null;
-  addMessageToUser: (message: MessageData) => void;
+  addMessageToUser: (message: RecievedMessageData) => void;
 }
 
 export default function FriendChatComponent({ recipientUsername, messages, addMessageToUser }: FriendChatComponentProps) {
@@ -78,10 +77,10 @@ export default function FriendChatComponent({ recipientUsername, messages, addMe
 
   return (
     <div className="flex flex-col flex-1 h-full">
-      <div ref={messageListRef} className="message-list flex-1 overflow-y-auto p-6 space-y-4 min-h-0">
-        {messages && recipientUsername && messages[recipientUsername] && messages[recipientUsername].map((msg) => (
-          <div key={msg.timestamp}>{msg.senderName}: {msg.content}</div>
-        ))}
+      <div ref={messageListRef} className="message-list flex-1 overflow-y-auto p-3 min-h-0">
+        {messages && recipientUsername && messages[recipientUsername] &&
+          <MessageList messages={messages[recipientUsername]} />
+        }
       </div>
       <form onSubmit={sendMessage} className={`flex flex-row ${recipientUsername ? '' : 'opacity-50 cursor-not-allowed'} mr-10 ml-10 mb-2 mt-2 focus-within:ring-2 focus-within:ring-highlight-high bg-overlay rounded-lg`}>
         <input
