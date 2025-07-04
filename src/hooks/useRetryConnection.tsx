@@ -39,7 +39,7 @@ export function useRetryConnection(options: UseRetryConnectionOptions = {}) {
   const startRetryLoop = useCallback(async (
     retryFunction: () => Promise<void>,
     onSuccess?: (data: any) => void,
-    onMaxRetriesReached?: () => void
+    onMaxRetriesReached?: () => void,
   ) => {
     if (retryState.isRetrying) return
 

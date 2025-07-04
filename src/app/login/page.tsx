@@ -1,3 +1,4 @@
+import { AuthProvider } from '@/contexts/AuthContext';
 import LoginForm from './LoginForm'
 
 export default function LoginPage() {

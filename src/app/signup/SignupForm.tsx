@@ -7,16 +7,20 @@ import { useEffect, useState } from 'react';
 export default function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { register, user } = useAuth();
+  const { register, user, setShowNotifications } = useAuth();
   const router = useRouter();
+
+  // disable failure to fetch user notifications on login page
+  useEffect(() => {
+    setShowNotifications(false);
+    return () => { setShowNotifications(true); }
+  }, [setShowNotifications]);
 
   // redirect to profile if user is already logged in
   useEffect(() => {
-    if (user && !isLoading) {
+    if (user && !isLoading)
       router.push("/profile");
-    }
   }, [user, isLoading, router]);
-
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

@@ -1,14 +1,16 @@
 'use client'
 
 import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function UserDetails() {
   const { user, loading, error, refetch, logout } = useAuth();
+  const router = useRouter();
 
   const logoutAndRedirect = async () => {
     await logout();
-    window.location.href = '/login'; // Redirect to login page after logout
-  };
+    router.push('/login'); // redirect to login page after logout
+  }
 
   if (loading) {
     return <p className="text-text text-center">Loading...</p>

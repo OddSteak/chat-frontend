@@ -16,3 +16,21 @@ export interface RequestData {
   username: string;
 }
 
+export interface MessageData {
+  id: number;
+  senderName: string;
+  recipientName: string;
+  content: string;
+  timestamp: Date;
+}
+
+export interface RecievedMessageData {
+  id: number;
+  senderName: string;
+  recipientName: string;
+  content: string;
+  timestamp: string;
+}
+
+export type MessageMap = Record<string, MessageData[]>;
+

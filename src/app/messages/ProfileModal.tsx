@@ -121,7 +121,7 @@ function OutgoingRequestsTabContent({ outgoingReqs, handleAddingReqs, handleRemo
 
 function FriendsTabContent({ friends, handleRemovingFriend }: any) {
   return (
-    <FriendList friends={friends} removeOption={true} handleRemovingFriend={handleRemovingFriend} />
+    <FriendList friends={friends} handleRemovingFriend={handleRemovingFriend} />
   );
 }
 

@@ -13,28 +13,24 @@ interface AuthContextType {
   register: (username: string, email: string, password: string) => Promise<boolean>
   logout: () => Promise<void>
   refetch: () => Promise<void>
+  setShowNotifications: (silent: boolean) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children, initialShowNotifications = true }: { children: ReactNode, initialShowNotifications?: boolean }) {
   const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
-  const { retryState, startRetryLoop, stopRetryLoop } = useRetryConnection();
+  const [showNotifications, setShowNotifications] = useState(initialShowNotifications);
+  const { retryState, startRetryLoop, stopRetryLoop } = useRetryConnection({showNotifications: showNotifications});
 
-  const fetchUser = async () => {
-    try {
-      const data = await apiClient.get("/api/auth/me")
-      const dat = await data.json()
-      setUser(dat.user)
-    } catch (error) {
-      console.error("Error fetching user:", error)
-      setError(true)
-    } finally {
-      setLoading(false)
+  // Only fetch user if we don't have user data
+  useEffect(() => {
+    if (!user && !loading) {
+      fetchUser();
     }
-  }
+  }, [])
 
   // Auto-start retry loop when there's an error
   useEffect(() => {
@@ -46,13 +42,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return await data.json();
         },
         (data: any) => {
-          console.log('Connection restored successfully!');
+          showNotifications && console.log('Connection restored successfully!');
           setLoading(false);
-          setUser(data.datauser);
+          setUser(data.user);
           setError(false);
         },
         () => {
-          console.log('Max retries reached. Please check your connection.')
+          showNotifications && console.log('Max retries reached. Please check your connection.')
           setLoading(false);
           setError(true);
         }
@@ -64,14 +60,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [error]);
 
+  // Listen for unauthorized events from apiClient
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setUser(null)
+      setError(true)
+    }
+
+    window.addEventListener('unauthorized', handleUnauthorized)
+    return () => window.removeEventListener('unauthorized', handleUnauthorized)
+  }, [])
+
+  const fetchUser = async () => {
+    try {
+      setLoading(true);
+      const data = await apiClient.get("/api/auth/me")
+      const dat = await data.json()
+      setUser(dat.user);
+      setError(false);
+    } catch (error) {
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
+      setLoading(true);
       await apiClient.post("/api/auth/login", { username: username, password: password })
-      await fetchUser() // Fetch user data after successful login
-      return true
+      await fetchUser(); // Fetch user data after successful login
+      setLoading(false);
+      console.log("fetched user data after login");
+      return true;
     } catch (error) {
       console.error("Login error:", error)
-      return false
+      setLoading(false);
+      setError(true);
+      return false;
     }
   }
 
@@ -88,29 +114,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await apiClient.post("/api/auth/logout", {})
+      setLoading(true);
+      await apiClient.post("/api/auth/logout", {});
     } catch (error) {
-      console.error("Logout error:", error)
+      console.error("Logout error:", error);
     } finally {
-      setUser(null)
+      setUser(null);
+      setLoading(false);
     }
   }
-
-  // Listen for unauthorized events from apiClient
-  useEffect(() => {
-    const handleUnauthorized = () => {
-      setUser(null)
-      setError(true)
-    }
-
-    window.addEventListener('unauthorized', handleUnauthorized)
-    return () => window.removeEventListener('unauthorized', handleUnauthorized)
-  }, [])
-
-  // Only fetch user if we don't have user data and we're not on login/signup pages
-  useEffect(() => {
-    fetchUser();
-  }, [])
 
   return (
     <AuthContext.Provider
@@ -121,7 +133,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
-        refetch: fetchUser
+        refetch: fetchUser,
+        setShowNotifications
       }}
     >
       {children}

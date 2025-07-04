@@ -4,36 +4,51 @@ import { useEffect, useState } from "react";
 import { ProfileData } from "./ChatData";
 import { useRetryConnection } from "@/hooks/useRetryConnection";
 import { apiClient } from "@/lib/api";
-import FriendList from "./FriendList";
 import ProfileModal from "./ProfileModal";
 import { useAuth } from "@/contexts/AuthContext";
-import { Friend, RequestData } from "@/types/User";
+import { Friend, MessageData, MessageMap, RecievedMessageData, RequestData } from "@/types/User";
+import RoomList from "./RoomList";
+import FriendChat from "./FriendChat";
+import FriendChatComponent from "./FriendChatComponent";
 
 export default function ChatRoom() {
-  const { retryState, startRetryLoop, stopRetryLoop } = useRetryConnection();
+  const { startRetryLoop } = useRetryConnection();
   const { user, loading: loadingUser, error: errorUser } = useAuth();
   const [isModalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [messages, setMessages] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
+
+  // modes
   const [isFriendsMode, setIsFriendsMode] = useState(true);
-  const [friends, setFriends] = useState < Friend[] > ([]);
 
-  // friend requests
-  const [incomingRequests, setIncomingRequests] = useState < RequestData[] > ([]);
-  const [outgoingRequests, setOutgoingRequests] = useState < RequestData[] > ([]);
+  // selected chat
+  const [selectedFriend, setSelectedFriend] = useState<string | null>(null);
 
-  /* useEffect(() => {
+  // api requests
+  const [messages, setMessages] = useState<MessageMap | null>(null);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [incomingRequests, setIncomingRequests] = useState<RequestData[]>([]);
+  const [outgoingRequests, setOutgoingRequests] = useState<RequestData[]>([]);
+
+  // fetch private messages
+  useEffect(() => {
     startRetryLoop(
       async () => {
         const data = await apiClient.get("/api/get-pms");
         return await data.json();
       },
-      (data: any) => {
-        console.log("successfully fetched messages!")
+      (data: Record<string, RecievedMessageData>) => {
         setLoading(false);
-        setMessages(data.messages);
+        const convertedMessages: MessageMap = {}
+
+        for (const [username, messages] of Object.entries(data.messages)) {
+          convertedMessages[username] = messages.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }))
+        }
+
+        setMessages(convertedMessages);
         setError(false);
       },
       () => {
@@ -42,8 +57,9 @@ export default function ChatRoom() {
         setError(true);
       }
     );
-  }, []) */
+  }, [])
 
+  // fetch friends
   useEffect(() => {
     startRetryLoop(
       async () => {
@@ -51,7 +67,6 @@ export default function ChatRoom() {
         return await data.json();
       },
       (data: any) => {
-        console.log("successfully fetched messages!")
         setLoading(false);
         setFriends(data.friends);
         setError(false);
@@ -64,16 +79,15 @@ export default function ChatRoom() {
     );
   }, [])
 
+  // fetch friend requests
   useEffect(() => {
     startRetryLoop(
       async () => {
         const data = await apiClient.get("/api/friends/get-requests");
         const dat = await data.json();
-        console.log(dat);
         return dat;
       },
       (data: any) => {
-        console.log("successfully fetched messages!")
         setLoading(false);
         setIncomingRequests(data.pendingRequests.filter((req: any) => !req.outgoing));
         setOutgoingRequests(data.pendingRequests.filter((req: any) => req.outgoing));
@@ -107,6 +121,25 @@ export default function ChatRoom() {
     setFriends(prevState => prevState.filter(friend => friend.username !== removeFriend));
   }
 
+  const addMessageToUser = (message: RecievedMessageData) => {
+    const currentUser = user; // get the latest user from context
+    const username = message.senderName === currentUser?.username ? message.recipientName : message.senderName;
+
+    const converted: MessageData = {
+      ...message,
+      timestamp: new Date(message.timestamp)
+    }
+
+    setMessages(prevMessages => {
+      prevMessages = prevMessages || {};
+      const userMessages = prevMessages[username] || [];
+      return {
+        ...prevMessages,
+        [username]: [...userMessages, converted]
+      };
+    });
+  }
+
   return (
     <div className="flex h-screen bg-base">
       {isModalOpen && <ProfileModal
@@ -125,22 +158,11 @@ export default function ChatRoom() {
         <div className="p-6 border-b border-highlight-high">
           <div className="flex items-center space-x-3">
             <button onClick={() => setModalOpen(true)} className="w-10 h-10 bg-overlay rounded-full flex items-center justify-center">
-              <span className="text-text font-medium">J</span>
+              <span className="text-text font-medium">{user?.username[0] || "L"}</span>
             </button>
             <ProfileData user={user} loading={loadingUser} error={errorUser} />
           </div>
         </div>
-
-        {/* new chat button */}
-        {/*
-        <div className="p-2">
-          <div className="flex flex-col justify-center justify-items-center p-5 h-11 w-full border-highlight-low shadow-sm text-text bg-overlay rounded-2xl">
-            <button className="items-center" onClick={() => setNewChatOpen(true)}>
-              New Chat
-            </button>
-          </div>
-        </div>
-        */}
 
         {/* switch friends/room mode */}
         <div className="p-2 h-14 mt-2 w-full self-center">
@@ -163,20 +185,9 @@ export default function ChatRoom() {
         {/* Channels/Rooms */}
         <div className="flex-1 overflow-y-auto p-2">
           {isFriendsMode ? (
-            <FriendList friends={friends} />
+            <FriendChat friends={friends} selectedFriend={selectedFriend} setSelectedFriend={setSelectedFriend} />
           ) : (
-            <div className="flex flex-col space-y-2">
-              <h2 className="text-lg font-semibold text-text">Channels</h2>
-              <ul className="space-y-1">
-                <li className="p-2 rounded hover:bg-highlight-low cursor-pointer">
-                  <span className="text-text"># general</span>
-                </li>
-                <li className="p-2 rounded hover:bg-highlight-low cursor-pointer">
-                  <span className="text-text"># random</span>
-                </li>
-                {/* Add more channels as needed */}
-              </ul>
-            </div>
+            <RoomList />
           )}
         </div>
 
@@ -201,25 +212,27 @@ export default function ChatRoom() {
         <div className="bg-surface border-b border-highlight-high px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-text"># general</h2>
+              <h2 className="text-lg font-semibold text-text">{selectedFriend}</h2>
             </div>
-            {/*
             <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
               </svg>
             </button>
-            */}
           </div>
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 bg-base overflow-y-auto p-6 space-y-4">
-        </div>
-
-        {/* Input Area */}
-        <div className="bg-surface text-text border-t border-highlight-high p-4">
-        </div>
+        {isFriendsMode ? (
+          <div className="flex-1 bg-base overflow-hidden space-y-4">
+            <FriendChatComponent recipientUsername={selectedFriend} messages={messages} addMessageToUser={addMessageToUser} />
+          </div>
+          ) :
+          (
+            <div className="flex-1 bg-base overflow-y-auto p-6 space-y-4">
+            </div>
+          )
+        }
       </div>
     </div>
   );
