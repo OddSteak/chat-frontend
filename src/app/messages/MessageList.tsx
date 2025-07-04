@@ -102,12 +102,12 @@ export default function MessageList({ messages }: MessageListProps) {
   return (
     messages.map((msg) => {
       const diffMinutes = lastTime ? getTimeDifference(lastTime, msg.timestamp).minutes : null;
-      const lastName = lastSenderName;
 
-      lastSenderName = msg.senderName;
-      lastTime = msg.timestamp;
+      if (!lastTime || (!lastSenderName || lastSenderName !== msg.senderName) || (diffMinutes && diffMinutes > 5)) {
+        // take time difference from the last header
+        lastSenderName = msg.senderName;
+        lastTime = msg.timestamp;
 
-      if (!lastTime || (!lastName || lastName !== msg.senderName) || (diffMinutes && diffMinutes > 5)) {
         return (
           <div className="flex mt-4 flex-row space-x-3 hover:bg-highlight-low" key={msg.id}>
             <div className="ml-2 w-9 h-9 self-center bg-overlay rounded-full flex items-center justify-center">
@@ -126,8 +126,8 @@ export default function MessageList({ messages }: MessageListProps) {
         )
       } else {
         return (
-          <div className="flex flex-row space-x-5 hover:bg-highlight-low group" key={msg.id}>
-            <span className="opacity-0 text-muted text-sm ml-2 group-hover:opacity-100">{msg.timestamp.getHours()}:{msg.timestamp.getMinutes()}</span>
+          <div className="flex flex-row space-x-3 hover:bg-highlight-low group" key={msg.id}>
+            <span className="opacity-0 w-9 text-muted text-sm ml-2 group-hover:opacity-100">{msg.timestamp.getHours()}:{msg.timestamp.getMinutes()}</span>
             <div className="text-text">
               {msg.content}
             </div>
