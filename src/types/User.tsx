@@ -11,6 +11,14 @@ export interface Friend {
   status: 'ONLINE' | 'OFFLINE';
 }
 
+export interface Room {
+  id: number;
+  roomName: string;
+  description: string;
+  type: string;
+  role: string;
+}
+
 export interface RequestData {
   id: number;
   username: string;

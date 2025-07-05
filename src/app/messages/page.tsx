@@ -6,10 +6,12 @@ import { useRetryConnection } from "@/hooks/useRetryConnection";
 import { apiClient } from "@/lib/api";
 import ProfileModal from "./ProfileModal";
 import { useAuth } from "@/contexts/AuthContext";
-import { Friend, MessageData, MessageMap, RecievedMessageData, RequestData } from "@/types/User";
+import { Friend, MessageData, MessageMap, RecievedMessageData, RequestData, Room } from "@/types/User";
 import RoomList from "./RoomList";
 import FriendChat from "./FriendChat";
 import FriendChatComponent from "./FriendChatComponent";
+import RoomChatList from "./RoomChatList";
+import CreateRoomModal from "./RoomCreationModal";
 
 export default function ChatRoom() {
   const { startRetryLoop } = useRetryConnection();
@@ -23,12 +25,20 @@ export default function ChatRoom() {
 
   // selected chat
   const [selectedFriend, setSelectedFriend] = useState<string | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<number | null>(null);
 
-  // api requests
+  // friends
   const [messages, setMessages] = useState<MessageMap | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
+
+  // friend requests
   const [incomingRequests, setIncomingRequests] = useState<RequestData[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<RequestData[]>([]);
+
+  // rooms
+  const [roomMessages, setRoomMessages] = useState<MessageMap | null>(null);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
 
   // fetch private messages
   useEffect(() => {
@@ -53,6 +63,55 @@ export default function ChatRoom() {
       },
       () => {
         console.log("failed to fetch messages");
+        setLoading(false);
+        setError(true);
+      }
+    );
+  }, [])
+
+  // fetch room messages
+  useEffect(() => {
+    startRetryLoop(
+      async () => {
+        const data = await apiClient.get("/get-room-msg");
+        return await data.json();
+      },
+      (data: Record<string, RecievedMessageData>) => {
+        setLoading(false);
+        const convertedMessages: MessageMap = {}
+
+        for (const [username, messages] of Object.entries(data.messages)) {
+          convertedMessages[username] = messages.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }))
+        }
+
+        setRoomMessages(convertedMessages);
+        setError(false);
+      },
+      () => {
+        console.log("failed to fetch messages");
+        setLoading(false);
+        setError(true);
+      }
+    );
+  }, [])
+
+  // fetch rooms
+  useEffect(() => {
+    startRetryLoop(
+      async () => {
+        const data = await apiClient.get("/api/rooms/get-rooms");
+        return await data.json();
+      },
+      (data: Record<string, Room[]>) => {
+        setLoading(false);
+        setRooms(data.rooms);
+        setError(false);
+      },
+      () => {
+        console.log("failed to fetch rooms");
         setLoading(false);
         setError(true);
       }
@@ -152,6 +211,8 @@ export default function ChatRoom() {
         handleAddingFriend={handleAddingFriend}
         handleRemovingFriend={handleRemovingFriend} />}
 
+      {isCreatingRoom && <CreateRoomModal setIsCreatingRoomAction={setIsCreatingRoom}/>}
+
       {/* Left Panel */}
       <div className="w-60 bg-surface border-r border-highlight-high flex flex-col">
         {/* Profile Section */}
@@ -168,15 +229,13 @@ export default function ChatRoom() {
         <div className="p-2 h-14 mt-2 w-full self-center">
           <div className="h-full rounded-lg border-highlight-low shadow-sm text-text bg-overlay">
             <div className="p-1 h-full flex flex-row justify-center justify-items-center">
-              <button className={`flex-1 ${!isFriendsMode ? `bg-highlight-med` : ``} rounded-sm text-center justify-items-center`}>
-                <span className="h-full text-center" onClick={() => setIsFriendsMode(false)}>
+              <button className={`flex-1 ${!isFriendsMode ? `bg-highlight-med` : ``} rounded-sm text-center justify-items-center`}
+                onClick={() => setIsFriendsMode(false)}>
                   rooms
-                </span>
               </button>
-              <button className={`flex-1 ${isFriendsMode ? `bg-highlight-med` : ``} rounded-sm text-center justify-items-center`}>
-                <span className="h-full text-center" onClick={() => setIsFriendsMode(true)}>
+              <button className={`flex-1 ${isFriendsMode ? `bg-highlight-med` : ``} rounded-sm text-center justify-items-center`}
+                onClick={() => setIsFriendsMode(true)}>
                   friends
-                </span>
               </button>
             </div>
           </div>
@@ -185,9 +244,16 @@ export default function ChatRoom() {
         {/* Channels/Rooms */}
         <div className="flex-1 overflow-y-auto p-2">
           {isFriendsMode ? (
-            <FriendChat friends={friends} selectedFriend={selectedFriend} setSelectedFriend={setSelectedFriend} />
+            <FriendChat
+              friends={friends}
+              selectedFriend={selectedFriend}
+              setSelectedFriend={setSelectedFriend} />
           ) : (
-            <RoomList />
+            <RoomChatList
+                rooms={rooms}
+                selectedRoom={selectedRoom}
+                setSelectedRoomAction={setSelectedRoom}
+                setIsCreatingRoomAction={setIsCreatingRoom} />
           )}
         </div>
 
