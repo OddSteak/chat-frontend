@@ -30,12 +30,12 @@ export default function FriendList({ friends, handleRemovingFriend }: FriendList
         {friends.map((friend) => (
           <li key={friend.id} className="flex flex-row items-center space-x-2">
             <div className="w-7 h-7 bg-overlay rounded-full flex items-center justify-center">
-              <span className="text-text font-medium">{friend.username[0]}</span>
+              <span className="text-text font-medium">{friend.name[0]}</span>
             </div>
-            <span className="text-text">{friend.username}</span>
+            <span className="text-text">{friend.name}</span>
             <button
               className={"ml-auto h-5 w-5 bg-love text-text hover:bg-red-600 transition-colors rounded-lg"}
-              onClick={() => removeFriend(friend.username)}>
+              onClick={() => removeFriend(friend.name)}>
               ✗
             </button>
           </li>

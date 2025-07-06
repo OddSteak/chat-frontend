@@ -6,16 +6,16 @@ export interface User {
 
 export interface Friend {
   id: number;
-  username: string;
+  name: string;
   email: string;
   status: 'ONLINE' | 'OFFLINE';
 }
 
 export interface Room {
   id: number;
-  roomName: string;
+  name: string;
   description: string;
-  type: string;
+  type: "PUBLIC" | "PRIVATE";
   role: string;
 }
 
@@ -27,7 +27,9 @@ export interface RequestData {
 export interface MessageData {
   id: number;
   senderName: string;
+  senderId: number;
   recipientName: string;
+  recipientId: number;
   content: string;
   timestamp: Date;
 }
@@ -35,10 +37,13 @@ export interface MessageData {
 export interface RecievedMessageData {
   id: number;
   senderName: string;
+  senderId: number;
   recipientName: string;
+  recipientId: number;
   content: string;
   timestamp: string;
 }
 
-export type MessageMap = Record<string, MessageData[]>;
+export type MessageMap = Record<number, MessageData[]>;
+export type RecievedMessageDataMap = Record<number, RecievedMessageData[]>;
 

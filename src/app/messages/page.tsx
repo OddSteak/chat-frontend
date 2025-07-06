@@ -6,7 +6,7 @@ import { useRetryConnection } from "@/hooks/useRetryConnection";
 import { apiClient } from "@/lib/api";
 import ProfileModal from "./ProfileModal";
 import { useAuth } from "@/contexts/AuthContext";
-import { Friend, MessageData, MessageMap, RecievedMessageData, RequestData, Room } from "@/types/User";
+import { Friend, MessageData, MessageMap, RecievedMessageData, RecievedMessageDataMap, RequestData, Room } from "@/types/User";
 import RoomList from "./RoomList";
 import FriendChat from "./FriendChat";
 import FriendChatComponent from "./FriendChatComponent";
@@ -24,8 +24,8 @@ export default function ChatRoom() {
   const [isFriendsMode, setIsFriendsMode] = useState(true);
 
   // selected chat
-  const [selectedFriend, setSelectedFriend] = useState<string | null>(null);
-  const [selectedRoom, setSelectedRoom] = useState<number | null>(null);
+  const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
   // friends
   const [messages, setMessages] = useState<MessageMap | null>(null);
@@ -47,12 +47,12 @@ export default function ChatRoom() {
         const data = await apiClient.get("/api/get-pms");
         return await data.json();
       },
-      (data: Record<string, RecievedMessageData>) => {
+      (data: Record<string, RecievedMessageDataMap>) => {
         setLoading(false);
         const convertedMessages: MessageMap = {}
 
-        for (const [username, messages] of Object.entries(data.messages)) {
-          convertedMessages[username] = messages.map((msg: any) => ({
+        for (const [userId, messages] of Object.entries(data.messages)) {
+          convertedMessages[parseInt(userId)] = messages.map((msg: RecievedMessageData) => ({
             ...msg,
             timestamp: new Date(msg.timestamp)
           }))
@@ -76,16 +76,16 @@ export default function ChatRoom() {
         const data = await apiClient.get("/get-room-msg");
         return await data.json();
       },
-      (data: Record<string, RecievedMessageData>) => {
+      (data: { messages: Record<string, RecievedMessageData[]> }) => {
         setLoading(false);
         const convertedMessages: MessageMap = {}
 
-        for (const [username, messages] of Object.entries(data.messages)) {
-          convertedMessages[username] = messages.map((msg: any) => ({
+        Object.entries(data.messages).forEach(([roomId, messages]) => {
+          convertedMessages[parseInt(roomId)] = messages.map((msg: any) => ({
             ...msg,
             timestamp: new Date(msg.timestamp)
           }))
-        }
+        })
 
         setRoomMessages(convertedMessages);
         setError(false);
@@ -177,12 +177,13 @@ export default function ChatRoom() {
   }
 
   const handleRemovingFriend = (removeFriend: string) => {
-    setFriends(prevState => prevState.filter(friend => friend.username !== removeFriend));
+    setFriends(prevState => prevState.filter(friend => friend.name !== removeFriend));
   }
 
   const addMessageToUser = (message: RecievedMessageData) => {
-    const currentUser = user; // get the latest user from context
-    const username = message.senderName === currentUser?.username ? message.recipientName : message.senderName;
+    const currentUser = user;
+    const userId = message.senderId === currentUser?.id ? message.recipientId : message.senderId;
+
 
     const converted: MessageData = {
       ...message,
@@ -191,10 +192,10 @@ export default function ChatRoom() {
 
     setMessages(prevMessages => {
       prevMessages = prevMessages || {};
-      const userMessages = prevMessages[username] || [];
+      const userMessages = prevMessages[userId] || [];
       return {
         ...prevMessages,
-        [username]: [...userMessages, converted]
+        [userId]: [...userMessages, converted]
       };
     });
   }
@@ -211,7 +212,7 @@ export default function ChatRoom() {
         handleAddingFriend={handleAddingFriend}
         handleRemovingFriend={handleRemovingFriend} />}
 
-      {isCreatingRoom && <CreateRoomModal setIsCreatingRoomAction={setIsCreatingRoom}/>}
+      {isCreatingRoom && <CreateRoomModal setIsCreatingRoomAction={setIsCreatingRoom} />}
 
       {/* Left Panel */}
       <div className="w-60 bg-surface border-r border-highlight-high flex flex-col">
@@ -231,11 +232,11 @@ export default function ChatRoom() {
             <div className="p-1 h-full flex flex-row justify-center justify-items-center">
               <button className={`flex-1 ${!isFriendsMode ? `bg-highlight-med` : ``} rounded-sm text-center justify-items-center`}
                 onClick={() => setIsFriendsMode(false)}>
-                  rooms
+                rooms
               </button>
               <button className={`flex-1 ${isFriendsMode ? `bg-highlight-med` : ``} rounded-sm text-center justify-items-center`}
                 onClick={() => setIsFriendsMode(true)}>
-                  friends
+                friends
               </button>
             </div>
           </div>
@@ -250,10 +251,10 @@ export default function ChatRoom() {
               setSelectedFriend={setSelectedFriend} />
           ) : (
             <RoomChatList
-                rooms={rooms}
-                selectedRoom={selectedRoom}
-                setSelectedRoomAction={setSelectedRoom}
-                setIsCreatingRoomAction={setIsCreatingRoom} />
+              rooms={rooms}
+              selectedRoom={selectedRoom}
+              setSelectedRoomAction={setSelectedRoom}
+              setIsCreatingRoomAction={setIsCreatingRoom} />
           )}
         </div>
 
@@ -278,7 +279,7 @@ export default function ChatRoom() {
         <div className="bg-surface border-b border-highlight-high px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-text">{selectedFriend}</h2>
+              <h2 className="text-lg font-semibold text-text">{selectedFriend?.name}</h2>
             </div>
             <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -289,16 +290,21 @@ export default function ChatRoom() {
         </div>
 
         {/* Messages Area */}
-        {isFriendsMode ? (
-          <div className="flex-1 bg-base overflow-hidden space-y-4">
-            <FriendChatComponent recipientUsername={selectedFriend} messages={messages} addMessageToUser={addMessageToUser} />
-          </div>
+        <div className="flex-1 bg-base overflow-hidden space-y-4">
+          {isFriendsMode ? (
+            selectedFriend && <FriendChatComponent
+              recipient={selectedFriend}
+              messages={messages}
+              addMessageToUser={addMessageToUser} />
           ) :
-          (
-            <div className="flex-1 bg-base overflow-y-auto p-6 space-y-4">
-            </div>
-          )
-        }
+            (
+              selectedRoom && <FriendChatComponent
+                recipient={selectedRoom}
+                messages={roomMessages}
+                addMessageToUser={addMessageToUser} />
+            )
+          }
+        </div>
       </div>
     </div>
   );
