@@ -58,8 +58,6 @@ export default function FriendChatComponent({ recipient, messages, addMessageToU
 
     const messageUrl = 'role' in recipient ? '/app/send-room-messages' : '/app/send-private-messages';
     if (stompClient && stompClient.connected && newMessage.trim() !== '') {
-      console.log("sending to", name + ": " + newMessage);
-
       let messagePayload: SendMessageRequest = {
         id: recipient.id,
         content: newMessage,

@@ -45,7 +45,6 @@ export default function AddFriend({ handleAddingReq }:  AddFriendProps) {
       } else if (response.ok) {
         setResult("successfully sent friend request");
         handleAddingReq({ id: res.id, username: res.username }, true);
-        console.log(res);
       } else {
         setError(true);
         setResult("An unknown error occurred.");

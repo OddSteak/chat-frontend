@@ -15,7 +15,6 @@ export default function MessageList({ messages }: MessageListProps) {
   const [renderKey, setRenderKey] = useState(0);
   let lastTime: Date | null = null;
   let lastSenderName: string | null = null;
-  console.log(messages);
 
   // force rerender to update the message time stamp every 5 minutes
   useEffect(() => {

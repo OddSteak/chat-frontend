@@ -200,6 +200,24 @@ export default function ChatRoom() {
     });
   }
 
+  const addMessageToRoom = (message: RecievedMessageData) => {
+    const roomId = message.recipientId;
+
+    const converted: MessageData = {
+      ...message,
+      timestamp: new Date(message.timestamp)
+    }
+
+    setRoomMessages(prevMessages => {
+      prevMessages = prevMessages || {};
+      const userMessages = prevMessages[roomId] || [];
+      return {
+        ...prevMessages,
+        [roomId]: [...userMessages, converted]
+      };
+    });
+  }
+
   return (
     <div className="flex h-screen bg-base">
       {isModalOpen && <ProfileModal
@@ -279,7 +297,7 @@ export default function ChatRoom() {
         <div className="bg-surface border-b border-highlight-high px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-text">{selectedFriend?.name}</h2>
+              <h2 className="text-lg font-semibold text-text">{selectedFriend?.name || (selectedRoom && "# " + selectedRoom?.name) || ""}</h2>
             </div>
             <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -301,7 +319,7 @@ export default function ChatRoom() {
               selectedRoom && <FriendChatComponent
                 recipient={selectedRoom}
                 messages={roomMessages}
-                addMessageToUser={addMessageToUser} />
+                addMessageToUser={addMessageToRoom} />
             )
           }
         </div>

@@ -28,7 +28,6 @@ export default function CreateRoomModal({ setIsCreatingRoomAction }: CreateRoomM
 
     if (!response.ok) {
       console.error("Failed to create room");
-      console.log(response);
       setIsCreatingRoomAction(false);
       return;
     }
