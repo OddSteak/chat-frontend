@@ -12,6 +12,7 @@ import FriendChatComponent from "./FriendChatComponent";
 import RoomChatList from "./RoomChatList";
 import CreateRoomModal from "./RoomCreationModal";
 import ChatHeader from "./ChatHeader";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 
 export default function ChatRoom() {
   const { startRetryLoop } = useRetryConnection();
@@ -39,6 +40,9 @@ export default function ChatRoom() {
   const [roomMessages, setRoomMessages] = useState<MessageMap | null>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+
+  // websocket
+  const stompClient = useWebSocket();
 
   // fetch private messages
   useEffect(() => {
@@ -160,6 +164,53 @@ export default function ChatRoom() {
     );
   }, [])
 
+  // subscribe to room messages
+  useEffect(() => {
+    if (stompClient && stompClient.connected) {
+      const messageUrl = '/user/queue/room-messages' ;
+      // Subscribe to private messages for this user
+      const privateSub = stompClient.subscribe(messageUrl, (message) => {
+        const receivedMessage = JSON.parse(message.body);
+        addMessageToRoom(receivedMessage);
+      });
+
+      // Subscribe to errors
+      const errorSub = stompClient.subscribe('/user/queue/errors', (error) => {
+        console.error('Received an error from the server:', error.body);
+      });
+
+      // Cleanup function
+      return () => {
+        privateSub.unsubscribe();
+        errorSub.unsubscribe();
+      };
+    }
+  }, [stompClient]);
+
+
+  // subscribe to private messages
+  useEffect(() => {
+    if (stompClient && stompClient.connected) {
+      const messageUrl = '/user/queue/private-messages';
+      // Subscribe to private messages for this user
+      const privateSub = stompClient.subscribe(messageUrl, (message) => {
+        const receivedMessage = JSON.parse(message.body);
+        addMessageToUser(receivedMessage);
+      });
+
+      // Subscribe to errors
+      const errorSub = stompClient.subscribe('/user/queue/errors', (error) => {
+        console.error('Received an error from the server:', error.body);
+      });
+
+      // Cleanup function
+      return () => {
+        privateSub.unsubscribe();
+        errorSub.unsubscribe();
+      };
+    }
+  }, [stompClient]);
+
   const handleAddingReqs = (newReq: RequestData, outgoing: boolean) => {
     outgoing ?
       setOutgoingRequests(prevState => [...prevState, newReq]) :
@@ -183,7 +234,6 @@ export default function ChatRoom() {
   const addMessageToUser = (message: RecievedMessageData) => {
     const currentUser = user;
     const userId = message.senderId === currentUser?.id ? message.recipientId : message.senderId;
-
 
     const converted: MessageData = {
       ...message,
@@ -304,14 +354,12 @@ export default function ChatRoom() {
           {isFriendsMode ? (
             selectedFriend && <FriendChatComponent
               recipient={selectedFriend}
-              messages={messages}
-              addMessageToUser={addMessageToUser} />
+              messages={messages} />
           ) :
             (
               selectedRoom && <FriendChatComponent
                 recipient={selectedRoom}
-                messages={roomMessages}
-                addMessageToUser={addMessageToRoom} />
+                messages={roomMessages} />
             )
           }
         </div>

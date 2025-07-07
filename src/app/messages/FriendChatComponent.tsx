@@ -8,15 +8,12 @@ import MessageList from './MessageList';
 interface FriendChatComponentProps {
   recipient: Friend | Room;
   messages: MessageMap | null;
-  addMessageToUser: (message: RecievedMessageData) => void;
 }
 
-export default function FriendChatComponent({ recipient, messages, addMessageToUser }: FriendChatComponentProps) {
+export default function FriendChatComponent({ recipient, messages }: FriendChatComponentProps) {
   const stompClient = useWebSocket();
   const [newMessage, setNewMessage] = useState('');
   const messageListRef = useRef<HTMLDivElement>(null);
-
-  const name = 'username' in recipient ? recipient.name : recipient.name;
 
   const scrollToBottom = () => {
     if (messageListRef.current) {
@@ -28,29 +25,6 @@ export default function FriendChatComponent({ recipient, messages, addMessageToU
   useEffect(() => {
     scrollToBottom();
   }, [messages, recipient]);
-
-  // Effect for subscribing to messages
-  useEffect(() => {
-    if (stompClient && stompClient.connected) {
-      const messageUrl = 'role' in recipient ? '/user/queue/room-messages' : '/user/queue/private-messages';
-      // Subscribe to private messages for this user
-      const privateSub = stompClient.subscribe(messageUrl, (message) => {
-        const receivedMessage = JSON.parse(message.body);
-        addMessageToUser(receivedMessage);
-      });
-
-      // Subscribe to errors
-      const errorSub = stompClient.subscribe('/user/queue/errors', (error) => {
-        console.error('Received an error from the server:', error.body);
-      });
-
-      // Cleanup function
-      return () => {
-        privateSub.unsubscribe();
-        errorSub.unsubscribe();
-      };
-    }
-  }, [stompClient]);
 
   // Function to send a message
   const sendMessage = (event: React.FormEvent<HTMLFormElement>) => {
