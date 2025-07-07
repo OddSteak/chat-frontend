@@ -38,8 +38,8 @@ export default function CreateRoomModal({ setIsCreatingRoomAction }: CreateRoomM
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-overlay z-50">
-      <div className="relative flex flex-col w-100 h-100 shadow-2xl rounded-lg p-4">
+    <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 z-50">
+      <div className="relative flex flex-col w-100 h-100 bg-surface shadow-2xl rounded-lg p-1">
         <div className="bg-overlay flex-1 rounded-lg p-6">
           <h2 className="text-lg text-text font-semibold mb-4">Create Room</h2>
           <form className="flex flex-col space-y-4" onSubmit={handleSubmit}>

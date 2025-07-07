@@ -7,11 +7,11 @@ import { apiClient } from "@/lib/api";
 import ProfileModal from "./ProfileModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { Friend, MessageData, MessageMap, RecievedMessageData, RecievedMessageDataMap, RequestData, Room } from "@/types/User";
-import RoomList from "./RoomList";
 import FriendChat from "./FriendChat";
 import FriendChatComponent from "./FriendChatComponent";
 import RoomChatList from "./RoomChatList";
 import CreateRoomModal from "./RoomCreationModal";
+import ChatHeader from "./ChatHeader";
 
 export default function ChatRoom() {
   const { startRetryLoop } = useRetryConnection();
@@ -233,9 +233,9 @@ export default function ChatRoom() {
       {isCreatingRoom && <CreateRoomModal setIsCreatingRoomAction={setIsCreatingRoom} />}
 
       {/* Left Panel */}
-      <div className="w-60 bg-surface border-r border-highlight-high flex flex-col">
+      <div className="w-60 bg-surface border-r border-highlight-med flex flex-col">
         {/* Profile Section */}
-        <div className="p-6 border-b border-highlight-high">
+        <div className="p-6 border-b border-highlight-med">
           <div className="flex items-center space-x-3">
             <button onClick={() => setModalOpen(true)} className="w-10 h-10 bg-overlay rounded-full flex items-center justify-center">
               <span className="text-text font-medium">{user?.username[0] || "L"}</span>
@@ -294,18 +294,10 @@ export default function ChatRoom() {
       {/* Right Panel - Chat Interface */}
       <div className="flex-1 flex flex-col">
         {/* Chat Header */}
-        <div className="bg-surface border-b border-highlight-high px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-text">{selectedFriend?.name || (selectedRoom && "# " + selectedRoom?.name) || ""}</h2>
-            </div>
-            <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-              </svg>
-            </button>
-          </div>
-        </div>
+        <ChatHeader
+          recipient={isFriendsMode ? selectedFriend : selectedRoom}
+          isFriend={isFriendsMode}
+          friends={friends} />
 
         {/* Messages Area */}
         <div className="flex-1 bg-base overflow-hidden space-y-4">
