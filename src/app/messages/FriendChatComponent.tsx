@@ -48,12 +48,15 @@ export default function FriendChatComponent({ recipient, messages }: FriendChatC
   };
 
   return (
-    <div className="flex flex-col flex-1 h-full">
-      <div ref={messageListRef} className="message-list flex-1 overflow-y-auto p-3 min-h-0">
+    <div className="flex flex-col flex-1 h-full max-w-full min-w-0">
+      {/* Message List */}
+      <div ref={messageListRef} className="message-list flex-1 overflow-y-auto p-3 min-h-0 max-w-full min-w-0">
         {messages && recipient && messages[recipient.id] &&
           <MessageList messages={messages[recipient.id]} />
         }
       </div>
+
+      {/* Message Input */}
       <form onSubmit={sendMessage} className={`flex flex-row ${recipient ? '' : 'opacity-50 cursor-not-allowed'} mr-10 ml-10 mb-2 mt-2 focus-within:ring-2 focus-within:ring-highlight-high bg-overlay rounded-lg`}>
         <input
           type="text"
@@ -61,7 +64,7 @@ export default function FriendChatComponent({ recipient, messages }: FriendChatC
           disabled={!recipient}
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          placeholder={recipient ? "Type a message..." : "Select a friend to start chatting"}
+          placeholder={recipient ? "Type a message..." : "Select a recipient to start chatting"}
         />
         <button type="submit"
           className="flex-1/4 h-full rounded-lg text-sm bg-highlight-low text-text hover:bg-highlight-high disabled:opcity-50 disabled:cursor-not-allowed disabled:hover:bg-highlight-low transition-colors"

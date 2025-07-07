@@ -15,11 +15,13 @@ export default function FriendChat({ friends, selectedFriend, setSelectedFriend 
       <h2 className="text-lg text-subtle">Friends</h2>
       <ul className="space-y-1">
         {friends.map((friend) => (
-          <li key={friend.id} onClick={() => setSelectedFriend(friend)} className={`${selectedFriend?.id === friend.id ? `bg-highlight-med` : `bg-overlay`} flex flex-row bg-opacity-50 space-x-2 rounded-lg items-center h-12 hover:bg-highlight-med`}>
-            <div className="w-7 h-7 ml-2 bg-overlay rounded-full flex items-center justify-center">
-              <span className="text-text font-medium">{friend.name[0]}</span>
-            </div>
-            <span className="text-text">{friend.name}</span>
+          <li key={friend.id}
+            onClick={() => setSelectedFriend(friend)}
+            className={`${selectedFriend?.id === friend.id ? `bg-highlight-med` : `bg-overlay`} flex flex-row bg-opacity-50 space-x-2 rounded-lg items-center h-12 hover:bg-highlight-med`}>
+              <div className="w-7 h-7 ml-2 bg-overlay rounded-full flex items-center justify-center">
+                <span className="text-text font-medium">{friend.name[0]}</span>
+              </div>
+              <span className="text-text">{friend.name}</span>
           </li>
         ))}
       </ul>

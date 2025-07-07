@@ -164,14 +164,21 @@ export default function ChatRoom() {
     );
   }, [])
 
-  // subscribe to room messages
+  // subscribe to messages
   useEffect(() => {
     if (stompClient && stompClient.connected) {
-      const messageUrl = '/user/queue/room-messages' ;
+      const roomMessageUrl = '/user/queue/room-messages' ;
       // Subscribe to private messages for this user
-      const privateSub = stompClient.subscribe(messageUrl, (message) => {
+      const roomSub = stompClient.subscribe(roomMessageUrl, (message) => {
         const receivedMessage = JSON.parse(message.body);
-        addMessageToRoom(receivedMessage);
+        addMessage(receivedMessage, true);
+      });
+
+      const privateMessageUrl = '/user/queue/private-messages';
+      // Subscribe to private messages for this user
+      const privateSub = stompClient.subscribe(privateMessageUrl, (message) => {
+        const receivedMessage = JSON.parse(message.body);
+        addMessage(receivedMessage, false);
       });
 
       // Subscribe to errors
@@ -181,30 +188,7 @@ export default function ChatRoom() {
 
       // Cleanup function
       return () => {
-        privateSub.unsubscribe();
-        errorSub.unsubscribe();
-      };
-    }
-  }, [stompClient]);
-
-
-  // subscribe to private messages
-  useEffect(() => {
-    if (stompClient && stompClient.connected) {
-      const messageUrl = '/user/queue/private-messages';
-      // Subscribe to private messages for this user
-      const privateSub = stompClient.subscribe(messageUrl, (message) => {
-        const receivedMessage = JSON.parse(message.body);
-        addMessageToUser(receivedMessage);
-      });
-
-      // Subscribe to errors
-      const errorSub = stompClient.subscribe('/user/queue/errors', (error) => {
-        console.error('Received an error from the server:', error.body);
-      });
-
-      // Cleanup function
-      return () => {
+        roomSub.unsubscribe();
         privateSub.unsubscribe();
         errorSub.unsubscribe();
       };
@@ -231,45 +215,28 @@ export default function ChatRoom() {
     setFriends(prevState => prevState.filter(friend => friend.name !== removeFriend));
   }
 
-  const addMessageToUser = (message: RecievedMessageData) => {
+  const addMessage = (message: RecievedMessageData, isRoom: boolean) => {
     const currentUser = user;
-    const userId = message.senderId === currentUser?.id ? message.recipientId : message.senderId;
+    const id = isRoom ? message.recipientId : (message.senderId === currentUser?.id ? message.recipientId : message.senderId);
 
     const converted: MessageData = {
       ...message,
       timestamp: new Date(message.timestamp)
     }
 
-    setMessages(prevMessages => {
+    const setFunction = isRoom ? setRoomMessages : setMessages;
+    setFunction(prevMessages => {
       prevMessages = prevMessages || {};
-      const userMessages = prevMessages[userId] || [];
+      const userMessages = prevMessages[id] || [];
       return {
         ...prevMessages,
-        [userId]: [...userMessages, converted]
-      };
-    });
-  }
-
-  const addMessageToRoom = (message: RecievedMessageData) => {
-    const roomId = message.recipientId;
-
-    const converted: MessageData = {
-      ...message,
-      timestamp: new Date(message.timestamp)
-    }
-
-    setRoomMessages(prevMessages => {
-      prevMessages = prevMessages || {};
-      const userMessages = prevMessages[roomId] || [];
-      return {
-        ...prevMessages,
-        [roomId]: [...userMessages, converted]
+        [id]: [...userMessages, converted]
       };
     });
   }
 
   return (
-    <div className="flex h-screen bg-base">
+    <div className="flex h-screen bg-base max-w-full">
       {isModalOpen && <ProfileModal
         setModalOpen={setModalOpen}
         incomingReqs={incomingRequests}
@@ -283,7 +250,7 @@ export default function ChatRoom() {
       {isCreatingRoom && <CreateRoomModal setIsCreatingRoomAction={setIsCreatingRoom} />}
 
       {/* Left Panel */}
-      <div className="w-60 bg-surface border-r border-highlight-med flex flex-col">
+      <div className="w-60 bg-surface border-r border-highlight-med flex flex-col min-w-0">
         {/* Profile Section */}
         <div className="p-6 border-b border-highlight-med">
           <div className="flex items-center space-x-3">
@@ -342,7 +309,7 @@ export default function ChatRoom() {
       </div>
 
       {/* Right Panel - Chat Interface */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col max-w-full min-w-0">
         {/* Chat Header */}
         <ChatHeader
           recipient={isFriendsMode ? selectedFriend : selectedRoom}
