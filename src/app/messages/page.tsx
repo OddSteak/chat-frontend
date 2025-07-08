@@ -1,14 +1,14 @@
 'use client'
 
 import { useEffect, useState } from "react";
-import { ProfileData } from "./ChatData";
+import { ProfileData } from "./ProfileData";
 import { useRetryConnection } from "@/hooks/useRetryConnection";
 import { apiClient } from "@/lib/api";
 import ProfileModal from "./ProfileModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { Friend, MessageData, MessageMap, RecievedMessageData, RecievedMessageDataMap, RequestData, Room } from "@/types/User";
-import FriendChat from "./FriendChat";
-import FriendChatComponent from "./FriendChatComponent";
+import FriendChat from "./FriendChatList";
+import ChatComponent from "./ChatComponent";
 import RoomChatList from "./RoomChatList";
 import CreateRoomModal from "./RoomCreationModal";
 import ChatHeader from "./ChatHeader";
@@ -168,14 +168,12 @@ export default function ChatRoom() {
   useEffect(() => {
     if (stompClient && stompClient.connected) {
       const roomMessageUrl = '/user/queue/room-messages' ;
-      // Subscribe to private messages for this user
       const roomSub = stompClient.subscribe(roomMessageUrl, (message) => {
         const receivedMessage = JSON.parse(message.body);
         addMessage(receivedMessage, true);
       });
 
       const privateMessageUrl = '/user/queue/private-messages';
-      // Subscribe to private messages for this user
       const privateSub = stompClient.subscribe(privateMessageUrl, (message) => {
         const receivedMessage = JSON.parse(message.body);
         addMessage(receivedMessage, false);
@@ -319,12 +317,12 @@ export default function ChatRoom() {
         {/* Messages Area */}
         <div className="flex-1 bg-base overflow-hidden space-y-4">
           {isFriendsMode ? (
-            selectedFriend && <FriendChatComponent
+            selectedFriend && <ChatComponent
               recipient={selectedFriend}
               messages={messages} />
           ) :
             (
-              selectedRoom && <FriendChatComponent
+              selectedRoom && <ChatComponent
                 recipient={selectedRoom}
                 messages={roomMessages} />
             )

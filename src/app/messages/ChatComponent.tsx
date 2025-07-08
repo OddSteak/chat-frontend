@@ -1,16 +1,16 @@
 'use client'
 
 import { useWebSocket } from '@/contexts/WebSocketContext';
-import { Friend, MessageMap, RecievedMessageData, Room } from '@/types/User';
+import { Friend, MessageMap, Room } from '@/types/User';
 import React, { useEffect, useRef, useState } from 'react';
 import MessageList from './MessageList';
 
-interface FriendChatComponentProps {
+interface ChatComponentProps {
   recipient: Friend | Room;
   messages: MessageMap | null;
 }
 
-export default function FriendChatComponent({ recipient, messages }: FriendChatComponentProps) {
+export default function ChatComponent({ recipient, messages }: ChatComponentProps) {
   const stompClient = useWebSocket();
   const [newMessage, setNewMessage] = useState('');
   const messageListRef = useRef<HTMLDivElement>(null);
