@@ -1,15 +1,18 @@
 'use client'
 
 import { useEffect, useState } from "react";
-import { ProfileData } from "./ChatData";
+import { ProfileData } from "./ProfileData";
 import { useRetryConnection } from "@/hooks/useRetryConnection";
 import { apiClient } from "@/lib/api";
 import ProfileModal from "./ProfileModal";
 import { useAuth } from "@/contexts/AuthContext";
-import { Friend, MessageData, MessageMap, RecievedMessageData, RequestData } from "@/types/User";
-import RoomList from "./RoomList";
-import FriendChat from "./FriendChat";
-import FriendChatComponent from "./FriendChatComponent";
+import { Friend, MessageData, MessageMap, RecievedMessageData, RecievedMessageDataMap, RequestData, Room } from "@/types/User";
+import FriendChat from "./FriendChatList";
+import ChatComponent from "./ChatComponent";
+import RoomChatList from "./RoomChatList";
+import CreateRoomModal from "./RoomCreationModal";
+import ChatHeader from "./ChatHeader";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 
 export default function ChatRoom() {
   const { startRetryLoop } = useRetryConnection();
@@ -22,13 +25,24 @@ export default function ChatRoom() {
   const [isFriendsMode, setIsFriendsMode] = useState(true);
 
   // selected chat
-  const [selectedFriend, setSelectedFriend] = useState<string | null>(null);
+  const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
-  // api requests
+  // friends
   const [messages, setMessages] = useState<MessageMap | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
+
+  // friend requests
   const [incomingRequests, setIncomingRequests] = useState<RequestData[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<RequestData[]>([]);
+
+  // rooms
+  const [roomMessages, setRoomMessages] = useState<MessageMap | null>(null);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+
+  // websocket
+  const stompClient = useWebSocket();
 
   // fetch private messages
   useEffect(() => {
@@ -37,12 +51,12 @@ export default function ChatRoom() {
         const data = await apiClient.get("/api/get-pms");
         return await data.json();
       },
-      (data: Record<string, RecievedMessageData>) => {
+      (data: Record<string, RecievedMessageDataMap>) => {
         setLoading(false);
         const convertedMessages: MessageMap = {}
 
-        for (const [username, messages] of Object.entries(data.messages)) {
-          convertedMessages[username] = messages.map((msg: any) => ({
+        for (const [userId, messages] of Object.entries(data.messages)) {
+          convertedMessages[parseInt(userId)] = messages.map((msg: RecievedMessageData) => ({
             ...msg,
             timestamp: new Date(msg.timestamp)
           }))
@@ -53,6 +67,55 @@ export default function ChatRoom() {
       },
       () => {
         console.log("failed to fetch messages");
+        setLoading(false);
+        setError(true);
+      }
+    );
+  }, [])
+
+  // fetch room messages
+  useEffect(() => {
+    startRetryLoop(
+      async () => {
+        const data = await apiClient.get("/get-room-msg");
+        return await data.json();
+      },
+      (data: { messages: Record<string, RecievedMessageData[]> }) => {
+        setLoading(false);
+        const convertedMessages: MessageMap = {}
+
+        Object.entries(data.messages).forEach(([roomId, messages]) => {
+          convertedMessages[parseInt(roomId)] = messages.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }))
+        })
+
+        setRoomMessages(convertedMessages);
+        setError(false);
+      },
+      () => {
+        console.log("failed to fetch messages");
+        setLoading(false);
+        setError(true);
+      }
+    );
+  }, [])
+
+  // fetch rooms
+  useEffect(() => {
+    startRetryLoop(
+      async () => {
+        const data = await apiClient.get("/api/rooms/get-rooms");
+        return await data.json();
+      },
+      (data: Record<string, Room[]>) => {
+        setLoading(false);
+        setRooms(data.rooms);
+        setError(false);
+      },
+      () => {
+        console.log("failed to fetch rooms");
         setLoading(false);
         setError(true);
       }
@@ -101,6 +164,35 @@ export default function ChatRoom() {
     );
   }, [])
 
+  // subscribe to messages
+  useEffect(() => {
+    if (stompClient && stompClient.connected) {
+      const roomMessageUrl = '/user/queue/room-messages' ;
+      const roomSub = stompClient.subscribe(roomMessageUrl, (message) => {
+        const receivedMessage = JSON.parse(message.body);
+        addMessage(receivedMessage, true);
+      });
+
+      const privateMessageUrl = '/user/queue/private-messages';
+      const privateSub = stompClient.subscribe(privateMessageUrl, (message) => {
+        const receivedMessage = JSON.parse(message.body);
+        addMessage(receivedMessage, false);
+      });
+
+      // Subscribe to errors
+      const errorSub = stompClient.subscribe('/user/queue/errors', (error) => {
+        console.error('Received an error from the server:', error.body);
+      });
+
+      // Cleanup function
+      return () => {
+        roomSub.unsubscribe();
+        privateSub.unsubscribe();
+        errorSub.unsubscribe();
+      };
+    }
+  }, [stompClient]);
+
   const handleAddingReqs = (newReq: RequestData, outgoing: boolean) => {
     outgoing ?
       setOutgoingRequests(prevState => [...prevState, newReq]) :
@@ -118,30 +210,31 @@ export default function ChatRoom() {
   }
 
   const handleRemovingFriend = (removeFriend: string) => {
-    setFriends(prevState => prevState.filter(friend => friend.username !== removeFriend));
+    setFriends(prevState => prevState.filter(friend => friend.name !== removeFriend));
   }
 
-  const addMessageToUser = (message: RecievedMessageData) => {
-    const currentUser = user; // get the latest user from context
-    const username = message.senderName === currentUser?.username ? message.recipientName : message.senderName;
+  const addMessage = (message: RecievedMessageData, isRoom: boolean) => {
+    const currentUser = user;
+    const id = isRoom ? message.recipientId : (message.senderId === currentUser?.id ? message.recipientId : message.senderId);
 
     const converted: MessageData = {
       ...message,
       timestamp: new Date(message.timestamp)
     }
 
-    setMessages(prevMessages => {
+    const setFunction = isRoom ? setRoomMessages : setMessages;
+    setFunction(prevMessages => {
       prevMessages = prevMessages || {};
-      const userMessages = prevMessages[username] || [];
+      const userMessages = prevMessages[id] || [];
       return {
         ...prevMessages,
-        [username]: [...userMessages, converted]
+        [id]: [...userMessages, converted]
       };
     });
   }
 
   return (
-    <div className="flex h-screen bg-base">
+    <div className="flex h-screen bg-base max-w-full">
       {isModalOpen && <ProfileModal
         setModalOpen={setModalOpen}
         incomingReqs={incomingRequests}
@@ -152,10 +245,12 @@ export default function ChatRoom() {
         handleAddingFriend={handleAddingFriend}
         handleRemovingFriend={handleRemovingFriend} />}
 
+      {isCreatingRoom && <CreateRoomModal setIsCreatingRoomAction={setIsCreatingRoom} />}
+
       {/* Left Panel */}
-      <div className="w-60 bg-surface border-r border-highlight-high flex flex-col">
+      <div className="w-60 bg-surface border-r border-highlight-med flex flex-col min-w-0">
         {/* Profile Section */}
-        <div className="p-6 border-b border-highlight-high">
+        <div className="p-6 border-b border-highlight-med">
           <div className="flex items-center space-x-3">
             <button onClick={() => setModalOpen(true)} className="w-10 h-10 bg-overlay rounded-full flex items-center justify-center">
               <span className="text-text font-medium">{user?.username[0] || "L"}</span>
@@ -168,15 +263,13 @@ export default function ChatRoom() {
         <div className="p-2 h-14 mt-2 w-full self-center">
           <div className="h-full rounded-lg border-highlight-low shadow-sm text-text bg-overlay">
             <div className="p-1 h-full flex flex-row justify-center justify-items-center">
-              <button className={`flex-1 ${!isFriendsMode ? `bg-highlight-med` : ``} rounded-sm text-center justify-items-center`}>
-                <span className="h-full text-center" onClick={() => setIsFriendsMode(false)}>
-                  rooms
-                </span>
+              <button className={`flex-1 ${!isFriendsMode ? `bg-highlight-med` : ``} rounded-sm text-center justify-items-center`}
+                onClick={() => setIsFriendsMode(false)}>
+                rooms
               </button>
-              <button className={`flex-1 ${isFriendsMode ? `bg-highlight-med` : ``} rounded-sm text-center justify-items-center`}>
-                <span className="h-full text-center" onClick={() => setIsFriendsMode(true)}>
-                  friends
-                </span>
+              <button className={`flex-1 ${isFriendsMode ? `bg-highlight-med` : ``} rounded-sm text-center justify-items-center`}
+                onClick={() => setIsFriendsMode(true)}>
+                friends
               </button>
             </div>
           </div>
@@ -185,9 +278,16 @@ export default function ChatRoom() {
         {/* Channels/Rooms */}
         <div className="flex-1 overflow-y-auto p-2">
           {isFriendsMode ? (
-            <FriendChat friends={friends} selectedFriend={selectedFriend} setSelectedFriend={setSelectedFriend} />
+            <FriendChat
+              friends={friends}
+              selectedFriend={selectedFriend}
+              setSelectedFriend={setSelectedFriend} />
           ) : (
-            <RoomList />
+            <RoomChatList
+              rooms={rooms}
+              selectedRoom={selectedRoom}
+              setSelectedRoomAction={setSelectedRoom}
+              setIsCreatingRoomAction={setIsCreatingRoom} />
           )}
         </div>
 
@@ -207,32 +307,27 @@ export default function ChatRoom() {
       </div>
 
       {/* Right Panel - Chat Interface */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col max-w-full min-w-0">
         {/* Chat Header */}
-        <div className="bg-surface border-b border-highlight-high px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-text">{selectedFriend}</h2>
-            </div>
-            <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-              </svg>
-            </button>
-          </div>
-        </div>
+        <ChatHeader
+          recipient={isFriendsMode ? selectedFriend : selectedRoom}
+          isFriend={isFriendsMode}
+          friends={friends} />
 
         {/* Messages Area */}
-        {isFriendsMode ? (
-          <div className="flex-1 bg-base overflow-hidden space-y-4">
-            <FriendChatComponent recipientUsername={selectedFriend} messages={messages} addMessageToUser={addMessageToUser} />
-          </div>
+        <div className="flex-1 bg-base overflow-hidden space-y-4">
+          {isFriendsMode ? (
+            selectedFriend && <ChatComponent
+              recipient={selectedFriend}
+              messages={messages} />
           ) :
-          (
-            <div className="flex-1 bg-base overflow-y-auto p-6 space-y-4">
-            </div>
-          )
-        }
+            (
+              selectedRoom && <ChatComponent
+                recipient={selectedRoom}
+                messages={roomMessages} />
+            )
+          }
+        </div>
       </div>
     </div>
   );

@@ -16,7 +16,7 @@ export default function MessageList({ messages }: MessageListProps) {
   let lastTime: Date | null = null;
   let lastSenderName: string | null = null;
 
-  // force rerender to update the message time every 5 minutes
+  // force rerender to update the message time stamp every 5 minutes
   useEffect(() => {
     const interval = setInterval(() => {
       setRenderKey(prev => prev + 1);
@@ -100,40 +100,46 @@ export default function MessageList({ messages }: MessageListProps) {
   };
 
   return (
-    messages.map((msg) => {
-      const diffMinutes = lastTime ? getTimeDifference(lastTime, msg.timestamp).minutes : null;
+    <div className="w-full">
+      {messages.map((msg) => {
+        const diffMinutes = lastTime ? getTimeDifference(lastTime, msg.timestamp).minutes : null;
 
-      if (!lastTime || (!lastSenderName || lastSenderName !== msg.senderName) || (diffMinutes && diffMinutes > 5)) {
-        // take time difference from the last header
-        lastSenderName = msg.senderName;
-        lastTime = msg.timestamp;
+        if (!lastTime || (!lastSenderName || lastSenderName !== msg.senderName) || (diffMinutes && diffMinutes > 5)) {
+          // take time difference from the last header
+          lastSenderName = msg.senderName;
+          lastTime = msg.timestamp;
 
-        return (
-          <div className="flex mt-4 flex-row space-x-3 hover:bg-highlight-low" key={msg.id}>
-            <div className="ml-2 w-9 h-9 self-center bg-overlay rounded-full flex items-center justify-center">
-              <span className="text-text font-medium">{msg.senderName[0]}</span>
-            </div>
-            <div className="flex flex-col">
-              <div className="flex flex-row space-x-3">
-                <h4 className="font-semibold text-text">{msg.senderName}</h4>
-                <span className="text-muted text-sm self-center">{formatMessageTime(msg.timestamp)}</span>
+          return (
+            <div
+              className="flex mt-4 flex-row space-x-3 hover:bg-highlight-low max-w-full min-w-0"
+              key={msg.id}>
+              <div className="ml-2 w-9 h-9 self-start bg-overlay rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-text font-medium">{msg.senderName[0]}</span>
               </div>
-              <div className="text-text">
+              <div className="flex flex-col">
+                <div className="flex flex-row space-x-3">
+                  <h4 className="font-semibold text-text">{msg.senderName}</h4>
+                  <span className="text-muted text-sm self-center">{formatMessageTime(msg.timestamp)}</span>
+                </div>
+                <span className="text-text break-all flex-1 min-w-0 max-w-full">
+                  {msg.content}
+                </span>
+              </div>
+            </div>
+          )
+        } else {
+          return (
+            <div
+              className="flex flex-row space-x-3 hover:bg-highlight-low group max-w-full min-w-0"
+              key={msg.id}>
+              <span className="opacity-0 w-9 text-muted text-sm ml-2 group-hover:opacity-100 flex-shrink-0">{msg.timestamp.getHours()}:{msg.timestamp.getMinutes()}</span>
+              <span className="text-text break-all min-w-0 max-w-full">
                 {msg.content}
-              </div>
+              </span>
             </div>
-          </div>
-        )
-      } else {
-        return (
-          <div className="flex flex-row space-x-3 hover:bg-highlight-low group" key={msg.id}>
-            <span className="opacity-0 w-9 text-muted text-sm ml-2 group-hover:opacity-100">{msg.timestamp.getHours()}:{msg.timestamp.getMinutes()}</span>
-            <div className="text-text">
-              {msg.content}
-            </div>
-          </div>
-        )
-      }
-    })
+          )
+        }
+      })}
+    </div>
   );
 }

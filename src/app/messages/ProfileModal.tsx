@@ -58,7 +58,7 @@ export default function ProfileModal({ setModalOpen, incomingReqs, outgoingReqs,
 
         {/* close button */}
         <button
-          className="absolute top-2 right-2 w-8 h-8 bg-surface hover:bg-love text-muted hover:text-text rounded-full flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg group"
+          className="absolute top-2 right-2 w-8 h-8 hover:bg-love text-muted hover:text-text rounded-full flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg group"
           onClick={() => setModalOpen(false)}
         >
           <svg
