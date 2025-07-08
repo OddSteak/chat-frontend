@@ -16,12 +16,14 @@ import { useWebSocket } from "@/contexts/WebSocketContext";
 
 export default function ChatRoom() {
   const { startRetryLoop } = useRetryConnection();
-  const { user, loading: loadingUser, error: errorUser } = useAuth();
-  const [isModalOpen, setModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
 
-  // modes
+  // user profile data
+  const { user, loading: loadingUser, error: errorUser } = useAuth();
+
+  // websocket
+  const stompClient = useWebSocket();
+
+  // modes - friend and room
   const [isFriendsMode, setIsFriendsMode] = useState(true);
 
   // selected chat
@@ -29,8 +31,8 @@ export default function ChatRoom() {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
   // friends
-  const [messages, setMessages] = useState<MessageMap | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
+  const [messages, setMessages] = useState<MessageMap | null>(null);
 
   // friend requests
   const [incomingRequests, setIncomingRequests] = useState<RequestData[]>([]);
@@ -39,10 +41,10 @@ export default function ChatRoom() {
   // rooms
   const [roomMessages, setRoomMessages] = useState<MessageMap | null>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
 
-  // websocket
-  const stompClient = useWebSocket();
+  // modals
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const [isProfileOpen, setProfileOpen] = useState(false);
 
   // fetch private messages
   useEffect(() => {
@@ -52,7 +54,6 @@ export default function ChatRoom() {
         return await data.json();
       },
       (data: Record<string, RecievedMessageDataMap>) => {
-        setLoading(false);
         const convertedMessages: MessageMap = {}
 
         for (const [userId, messages] of Object.entries(data.messages)) {
@@ -63,12 +64,9 @@ export default function ChatRoom() {
         }
 
         setMessages(convertedMessages);
-        setError(false);
       },
       () => {
-        console.log("failed to fetch messages");
-        setLoading(false);
-        setError(true);
+        console.error("failed to fetch messages");
       }
     );
   }, [])
@@ -81,7 +79,6 @@ export default function ChatRoom() {
         return await data.json();
       },
       (data: { messages: Record<string, RecievedMessageData[]> }) => {
-        setLoading(false);
         const convertedMessages: MessageMap = {}
 
         Object.entries(data.messages).forEach(([roomId, messages]) => {
@@ -92,12 +89,9 @@ export default function ChatRoom() {
         })
 
         setRoomMessages(convertedMessages);
-        setError(false);
       },
       () => {
         console.log("failed to fetch messages");
-        setLoading(false);
-        setError(true);
       }
     );
   }, [])
@@ -110,14 +104,10 @@ export default function ChatRoom() {
         return await data.json();
       },
       (data: Record<string, Room[]>) => {
-        setLoading(false);
         setRooms(data.rooms);
-        setError(false);
       },
       () => {
         console.log("failed to fetch rooms");
-        setLoading(false);
-        setError(true);
       }
     );
   }, [])
@@ -130,14 +120,10 @@ export default function ChatRoom() {
         return await data.json();
       },
       (data: any) => {
-        setLoading(false);
         setFriends(data.friends);
-        setError(false);
       },
       () => {
         console.log("failed to fetch messages");
-        setLoading(false);
-        setError(true);
       }
     );
   }, [])
@@ -151,15 +137,11 @@ export default function ChatRoom() {
         return dat;
       },
       (data: any) => {
-        setLoading(false);
         setIncomingRequests(data.pendingRequests.filter((req: any) => !req.outgoing));
         setOutgoingRequests(data.pendingRequests.filter((req: any) => req.outgoing));
-        setError(false);
       },
       () => {
         console.log("failed to fetch messages");
-        setLoading(false);
-        setError(true);
       }
     );
   }, [])
@@ -235,8 +217,8 @@ export default function ChatRoom() {
 
   return (
     <div className="flex h-screen bg-base max-w-full">
-      {isModalOpen && <ProfileModal
-        setModalOpen={setModalOpen}
+      {isProfileOpen && <ProfileModal
+        setModalOpen={setProfileOpen}
         incomingReqs={incomingRequests}
         outgoingReqs={outgoingRequests}
         friends={friends}
@@ -252,7 +234,7 @@ export default function ChatRoom() {
         {/* Profile Section */}
         <div className="p-6 border-b border-highlight-med">
           <div className="flex items-center space-x-3">
-            <button onClick={() => setModalOpen(true)} className="w-10 h-10 bg-overlay rounded-full flex items-center justify-center">
+            <button onClick={() => setProfileOpen(true)} className="w-10 h-10 bg-overlay rounded-full flex items-center justify-center">
               <span className="text-text font-medium">{user?.username[0] || "L"}</span>
             </button>
             <ProfileData user={user} loading={loadingUser} error={errorUser} />
