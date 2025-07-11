@@ -9,6 +9,7 @@ export interface Friend {
   name: string;
   email: string;
   status: 'ONLINE' | 'OFFLINE';
+  lastReadTime: Date | null;
 }
 
 export interface Room {
@@ -17,6 +18,7 @@ export interface Room {
   description: string;
   type: "PUBLIC" | "PRIVATE";
   role: string;
+  lastReadTime: Date | null;
 }
 
 export interface RequestData {

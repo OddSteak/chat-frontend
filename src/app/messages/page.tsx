@@ -91,7 +91,7 @@ export default function ChatRoom() {
         setRoomMessages(convertedMessages);
       },
       () => {
-        console.log("failed to fetch messages");
+        console.error("failed to fetch messages");
       }
     );
   }, [])
@@ -107,7 +107,7 @@ export default function ChatRoom() {
         setRooms(data.rooms);
       },
       () => {
-        console.log("failed to fetch rooms");
+        console.error("failed to fetch rooms");
       }
     );
   }, [])
@@ -123,7 +123,7 @@ export default function ChatRoom() {
         setFriends(data.friends);
       },
       () => {
-        console.log("failed to fetch messages");
+        console.error("failed to fetch messages");
       }
     );
   }, [])
@@ -141,7 +141,7 @@ export default function ChatRoom() {
         setOutgoingRequests(data.pendingRequests.filter((req: any) => req.outgoing));
       },
       () => {
-        console.log("failed to fetch messages");
+        console.error("failed to fetch messages");
       }
     );
   }, [])
@@ -174,6 +174,56 @@ export default function ChatRoom() {
       };
     }
   }, [stompClient]);
+
+  // update read time on chat switch
+  useEffect(() => {
+    updateReadTime(isFriendsMode, selectedRoom, selectedFriend);
+  }, [isFriendsMode, selectedRoom, selectedFriend]);
+
+  const updateReadTime = (isFriendsMode: boolean, selectedRoom: Room | null, selectedFriend: Friend | null) => {
+    // update locally
+    if (isFriendsMode && selectedFriend) {
+      setFriends(prevFriends => {
+        return prevFriends.map(friend => {
+          if (friend.id === selectedFriend.id) {
+            return {
+              ...friend,
+              lastReadTime: new Date() // Update the last read time
+            };
+          }
+          return friend;
+        });
+      });
+    } else if (selectedRoom) {
+      setRooms(prevRooms => {
+        return prevRooms.map(room => {
+          if (room.id === selectedRoom.id) {
+            return {
+              ...room,
+              lastReadTime: new Date() // Update the last read time
+            };
+          }
+          return room;
+        });
+      });
+    }
+
+    // send update to server
+    if (stompClient && stompClient.connected) {
+      const payload = {
+        conversationId: isFriendsMode ? selectedFriend?.id : selectedRoom?.id,
+        room: !isFriendsMode,
+      };
+
+      if (payload.conversationId === undefined)
+        return;
+
+      stompClient.publish({
+        destination: '/app/update-read-time',
+        body: JSON.stringify(payload),
+      });
+    }
+  }
 
   const handleAddingReqs = (newReq: RequestData, outgoing: boolean) => {
     outgoing ?
